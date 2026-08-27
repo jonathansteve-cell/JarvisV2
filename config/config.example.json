@@ -1,0 +1,25 @@
+{
+  "app": {
+    "name": "J.A.R.V.I.S V2",
+    "mode": "gui",
+    "owner_name": "sir"
+  },
+  "voice": {
+    "wake_words": ["hey jarvis", "jarvis"],
+    "continuous_listening": true,
+    "tts_enabled": true,
+    "tts_rate": 178,
+    "tts_volume": 0.9
+  },
+  "ai": {
+    "provider": "groq",
+    "model": "llama-3.3-70b-versatile",
+    "temperature": 0.6
+  },
+  "behavior": {
+    "confirm_dangerous_actions": true,
+    "speak_responses": true,
+    "remember_conversations": true,
+    "learning_enabled": true
+  }
+}

@@ -104,6 +104,26 @@ stack. Full guide in [`docs/UI.md`](docs/UI.md).
   (starts a session when idle, reports stats when one is running)
 - **Telemetry everywhere** — `CPU MEM DSK PWR` under the core, refreshed every 2 s
 
+## Solar Web Dashboard (Spark-style)
+
+Prefer a browser dashboard? `python main.py --web` serves a **glassmorphism
+Spark-style control center** at `http://localhost:8765` — built with the Python
+standard library only (no Flask, no npm):
+
+- **Hero solar core** — the same particle-orbit animation ported to HTML canvas
+- **Circular live gauges** — CPU / MEMORY / DISK with color thresholds, power line
+- **AI console card** — full chat with Jarvis (same pipeline as HUD/CLI/voice)
+- **Tasks · Notes · Memory Core cards** — live from local SQLite + JSON stores
+- **Roblox safe-mode card** — session countdown, goals checklist, grind stats
+- **Quick actions grid** and a fixed bottom command console (`SEND / SPEAK /
+  ROBLOX / GRIND`)
+- **Browser voice** — SPEAK button uses the Web Speech API; replies are spoken
+  aloud with a deep synthetic profile (rate 0.92, pitch 0.55), TTS toggleable
+
+Everything polls `/api/state` every 2 seconds; commands POST to `/api/command`.
+Point a browser at it from any device on your network — the dashboard is the UI,
+Jarvis is the engine.
+
 ## Voice personas
 
 Personas live in [`voice/voice_profiles.py`](voice/voice_profiles.py) and are set
@@ -235,6 +255,7 @@ console.groq.com immediately.
 | Mode | Command | What happens |
 | --- | --- | --- |
 | **Solar HUD** (default) | `python main.py` | Full desktop interface + voice |
+| **Web Dashboard** | `python main.py --web` | Spark-style browser dashboard at `localhost:8765` |
 | **Voice only** | `python main.py --voice-only` | No window; pure microphone loop |
 | **One command** | `python main.py --command "system status"` | Execute and print, then exit |
 
@@ -434,6 +455,10 @@ JarvisV2/
 │
 ├── gui/
 │   └── main_window.py         # Solar Core HUD (Tkinter)
+│
+├── dashboard/
+│   ├── server.py              # Web dashboard server (stdlib only)
+│   └── static/index.html      # Spark-style glass UI
 │
 ├── voice/
 │   ├── speech_recognition_engine.py   # Microphone → text

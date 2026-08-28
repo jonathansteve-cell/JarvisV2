@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>J.A.R.V.I.S V2 · Solar Dashboard</title>
+<style>
+  :root{
+    --bg:#050505; --card:rgba(255,140,26,.045); --card-line:rgba(255,140,26,.18);
+    --orange:#FF8C1A; --bright:#FFB25E; --soft:#FFC773; --deep:#B4530A;
+    --text:#F5EDE0; --muted:#9A8F7F; --green:#38E07C; --red:#E05555;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;
+       min-height:100vh;display:flex;flex-direction:column;
+       background-image:radial-gradient(ellipse 80% 50% at 50% -10%,rgba(255,140,26,.08),transparent)}
+  ::-webkit-scrollbar{width:8px;height:8px}
+  ::-webkit-scrollbar-thumb{background:#2A1806;border-radius:4px}
+  ::-webkit-scrollbar-track{background:transparent}
+
+  /* ---------- top nav ---------- */
+  nav{display:flex;align-items:center;gap:18px;padding:14px 26px;border-bottom:1px solid var(--card-line);
+      background:rgba(10,8,5,.85);backdrop-filter:blur(10px);position:sticky;top:0;z-index:10}
+  .logo{font-weight:700;font-size:17px;letter-spacing:1px;color:var(--orange)}
+  .logo small{color:var(--muted);font-weight:400;letter-spacing:3px;font-size:9px;margin-left:8px}
+  .chip{font-family:Consolas,monospace;font-size:10px;padding:4px 10px;border-radius:20px;
+        border:1px solid var(--card-line);color:var(--muted);letter-spacing:1px}
+  .chip.on{color:var(--green);border-color:rgba(56,224,124,.4)}
+  .chip.warn{color:var(--red);border-color:rgba(224,85,85,.4)}
+  #clock{margin-left:auto;font-family:Consolas,monospace;font-size:20px;color:var(--bright);letter-spacing:2px}
+
+  /* ---------- hero ---------- */
+  .hero{display:flex;gap:26px;padding:22px 26px 6px;align-items:center;flex-wrap:wrap}
+  .core-wrap{position:relative;width:300px;height:300px;flex:0 0 auto}
+  #core{width:300px;height:300px}
+  .hero-info{flex:1;min-width:260px}
+  .hero-info h1{font-size:30px;letter-spacing:2px;color:var(--text)}
+  .hero-info h1 span{color:var(--orange)}
+  .hero-info .quote{color:var(--muted);font-style:italic;margin-top:6px;font-size:14px}
+  .hero-stats{display:flex;gap:12px;margin-top:18px;flex-wrap:wrap}
+  .stat{background:var(--card);border:1px solid var(--card-line);border-radius:14px;padding:10px 18px}
+  .stat b{display:block;font-family:Consolas,monospace;font-size:20px;color:var(--bright)}
+  .stat span{font-size:10px;color:var(--muted);letter-spacing:2px}
+
+  /* ---------- grid ---------- */
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px;padding:18px 26px 120px}
+  .card{background:var(--card);border:1px solid var(--card-line);border-radius:18px;padding:18px;
+        backdrop-filter:blur(6px);box-shadow:0 0 24px rgba(255,140,26,.05) inset}
+  .card h3{font-size:11px;letter-spacing:3px;color:var(--orange);margin-bottom:12px;font-weight:600}
+  .card h3 em{float:right;font-style:normal;color:var(--muted);letter-spacing:1px;font-size:10px}
+
+  /* gauges */
+  .gauges{display:flex;justify-content:space-around;gap:8px;flex-wrap:wrap}
+  .gauge{text-align:center}
+  .gauge svg{transform:rotate(-90deg)}
+  .gauge .val{font-family:Consolas,monospace;font-size:15px;margin-top:-52px;margin-bottom:22px}
+  .gauge label{font-size:10px;color:var(--muted);letter-spacing:2px}
+  .battery-line{margin-top:12px;font-family:Consolas,monospace;font-size:12px;color:var(--muted);text-align:center}
+
+  /* chat */
+  .chat-card{grid-column:span 2;min-height:340px;display:flex;flex-direction:column}
+  #chatlog{flex:1;overflow-y:auto;max-height:420px;font-size:13.5px;line-height:1.55;padding-right:6px}
+  #chatlog .u{color:var(--soft)} #chatlog .j{color:var(--orange)}
+  #chatlog .s{color:var(--muted);font-size:11px}
+  #chatlog p{margin:7px 0}
+  .chat-in{display:flex;gap:8px;margin-top:12px}
+  input[type=text]{flex:1;background:rgba(255,140,26,.06);border:1px solid var(--card-line);border-radius:10px;
+       padding:11px 14px;color:var(--text);font-size:14px;outline:none}
+  input[type=text]:focus{border-color:var(--orange);box-shadow:0 0 12px rgba(255,140,26,.25)}
+  button{background:#1A0F04;color:var(--bright);border:1px solid var(--card-line);border-radius:10px;
+       padding:10px 16px;font-weight:700;font-size:12px;letter-spacing:1px;cursor:pointer;transition:.15s}
+  button:hover{background:#2A1806;color:#fff;box-shadow:0 0 14px rgba(255,140,26,.3)}
+  button.primary{background:var(--orange);color:#140800;border-color:var(--orange)}
+  button.primary:hover{background:var(--bright)}
+
+  /* lists */
+  ul.list{list-style:none;font-size:13px}
+  ul.list li{padding:7px 0;border-bottom:1px dashed rgba(255,140,26,.12);display:flex;gap:8px;align-items:baseline}
+  ul.list li:last-child{border-bottom:none}
+  ul.list .dot{color:var(--orange)}
+  ul.list .done{color:var(--muted);text-decoration:line-through}
+  .empty{color:var(--muted);font-size:12px;font-style:italic}
+
+  /* roblox */
+  .rb-session{font-family:Consolas,monospace;font-size:12px;color:var(--green);margin-bottom:10px}
+  .rb-session.idle{color:var(--muted)}
+  .rb-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .goal{font-size:12.5px;padding:5px 0;color:var(--text)}
+  .goal.x{color:var(--muted);text-decoration:line-through}
+  .rbstats{font-size:11px;color:var(--muted);font-family:Consolas,monospace;margin-top:8px}
+
+  /* quick actions */
+  .qa{display:flex;flex-wrap:wrap;gap:8px}
+  .qa button{font-size:11px;padding:9px 12px}
+
+  footer{position:fixed;bottom:0;left:0;right:0;border-top:1px solid var(--card-line);
+     background:rgba(10,8,5,.92);backdrop-filter:blur(12px);padding:12px 26px;display:flex;gap:10px;z-index:10}
+  footer input[type=text]{font-size:15px;padding:13px 16px}
+  .spacer{flex:1}
+  @media(max-width:760px){.chat-card{grid-column:span 1}#clock{font-size:14px}.hero{padding:14px}}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">J.A.R.V.I.S V2<small>SOLAR DASHBOARD</small></div>
+  <span class="chip" id="chip-ai">AI …</span>
+  <span class="chip" id="chip-voice">VOICE</span>
+  <span id="clock">--:--:--</span>
+</nav>
+
+<section class="hero">
+  <div class="core-wrap"><canvas id="core" width="300" height="300"></canvas></div>
+  <div class="hero-info">
+    <h1><span id="aname">JARVIS</span> ONLINE</h1>
+    <div class="quote" id="quote">All primary systems are operational, sir.</div>
+    <div class="hero-stats">
+      <div class="stat"><b id="st-mem-facts">0</b><span>MEMORIES</span></div>
+      <div class="stat"><b id="st-convos">0</b><span>CONVERSATIONS</span></div>
+      <div class="stat"><b id="st-tasks">0</b><span>OPEN TASKS</span></div>
+      <div class="stat"><b id="st-grind">0</b><span>GRIND MINUTES</span></div>
+    </div>
+  </div>
+</section>
+
+<main class="grid">
+
+  <div class="card">
+    <h3>SYSTEM TELEMETRY <em>live</em></h3>
+    <div class="gauges">
+      <div class="gauge" id="g-cpu"></div>
+      <div class="gauge" id="g-mem"></div>
+      <div class="gauge" id="g-dsk"></div>
+    </div>
+    <div class="battery-line" id="battery">POWER —</div>
+  </div>
+
+  <div class="card chat-card">
+    <h3>AI CONSOLE <em id="provider">offline persona</em></h3>
+    <div id="chatlog"></div>
+    <div class="chat-in">
+      <input type="text" id="chatin" placeholder="Type a command…" autocomplete="off">
+      <button class="primary" onclick="sendChat()">SEND</button>
+      <button onclick="voiceInput()">🎙 SPEAK</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>TASKS <em>productivity</em></h3>
+    <ul class="list" id="tasks"><li class="empty">No open tasks.</li></ul>
+  </div>
+
+  <div class="card">
+    <h3>NOTES <em>latest</em></h3>
+    <ul class="list" id="notes"><li class="empty">No notes yet.</li></ul>
+  </div>
+
+  <div class="card">
+    <h3>MEMORY CORE <em>sqlite</em></h3>
+    <ul class="list" id="facts"><li class="empty">No memories stored yet.</li></ul>
+  </div>
+
+  <div class="card">
+    <h3>ROBLOX · SAFE MODE <em>no cheats, ever</em></h3>
+    <div class="rb-session idle" id="rb-session">NO ACTIVE SESSION</div>
+    <div id="rb-goals"><div class="empty">No goals. Try: set roblox goal: reach level 50</div></div>
+    <div class="rb-row">
+      <button onclick="quick('roblox stats')">STATS</button>
+      <button onclick="quick('start 30 minute roblox grind session for daily quests')">START GRIND</button>
+      <button onclick="quick('show roblox goals')">GOALS</button>
+      <button onclick="quick('open roblox')">OPEN ROBLOX</button>
+    </div>
+    <div class="rbstats" id="rb-stats"></div>
+  </div>
+
+  <div class="card">
+    <h3>QUICK ACTIONS</h3>
+    <div class="qa">
+      <button onclick="quick('system status')">SYSTEM STATUS</button>
+      <button onclick="quick('what time is it')">TIME</button>
+      <button onclick="quick('tell me a joke')">JOKE</button>
+      <button onclick="quick('take screenshot')">SCREENSHOT</button>
+      <button onclick="quick('what do you remember')">MEMORY</button>
+      <button onclick="quick('open youtube')">YOUTUBE</button>
+      <button onclick="quick('volume 40')">VOL 40</button>
+      <button onclick="quick('play music')">PLAY MUSIC</button>
+      <button onclick="quick('what can you do')">CAPABILITIES</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>VOICE OUTPUT <em>browser tts</em></h3>
+    <div style="font-size:12.5px;color:var(--muted);margin-bottom:12px">
+      Responses are spoken by your browser with a deep synthetic profile.</div>
+    <button id="tts-toggle" class="primary" onclick="toggleTTS()">TTS: ON</button>
+    <button onclick="speakText('All systems operational, sir. No need to worry.')">TEST VOICE</button>
+  </div>
+
+</main>
+
+<footer>
+  <input type="text" id="console-in" placeholder='Type command or press Speak…  ·  e.g. "open chrome then volume 40"' autocomplete="off">
+  <button class="primary" onclick="sendConsole()">SEND</button>
+  <button onclick="voiceInput()">SPEAK</button>
+  <button onclick="quick('roblox stats')">ROBLOX</button>
+  <button onclick="quick('start 30 minute roblox grind session for daily quests')">GRIND</button>
+</footer>
+
+<script>
+/* ============ state ============ */
+let TTS_ON = true;
+const $ = id => document.getElementById(id);
+const QUOTES = ["All primary systems are operational, sir.",
+  "Standing by for your next command, sir.",
+  "Systems nominal. The core is stable.",
+  "At your service, sir. Always."];
+$("quote").textContent = QUOTES[Math.floor(Math.random()*QUOTES.length)];
+
+/* ============ solar core canvas ============ */
+const cv = $("core"), cx = cv.getContext("2d");
+const C = 150;
+const particles = [];
+[[0.30,34,.55,2.2],[0.38,30,-.4,1.8],[0.46,26,.3,1.5],[0.55,18,-.22,1.2]].forEach(([rs,n,sp,sz])=>{
+  for(let i=0;i<n;i++) particles.push({r:300*rs+(Math.random()*12-6),a:Math.random()*360,
+    s:sp+(Math.random()*.16-.08),z:sz,w:.6+Math.random()*.8});
+});
+const beams = [];
+for(let i=0;i<8;i++) beams.push({a:Math.random()*360,s:(Math.random()*.25+.1)*(Math.random()<.5?-1:1),l:.42+Math.random()*.1});
+let phase=0;
+function draw(){
+  cx.clearRect(0,0,300,300);
+  // orbit rings
+  [[.30,[2,6]],[.46,[2,8]],[.55,[1,10]]].forEach(([rs,d])=>{
+    cx.beginPath();cx.setLineDash(d);cx.strokeStyle="rgba(255,140,26,.25)";
+    cx.arc(C,C,150*rs,0,7);cx.stroke();cx.setLineDash([]);
+  });
+  // beams
+  beams.forEach(b=>{
+    b.a=(b.a+b.s)%360;
+    const rad=b.a*Math.PI/180, len=300*b.l, inner=29;
+    for(let st=0;st<3;st++){
+      const r0=inner+len/3.2*st, r1=inner+len/3.2*(st+1);
+      cx.beginPath();
+      cx.strokeStyle=["rgba(180,83,10,.5)","rgba(255,140,26,.8)","rgba(255,199,115,.9)"][st];
+      cx.lineWidth=st===2?2:1;
+      cx.moveTo(C+r0*Math.cos(rad),C+r0*Math.sin(rad));
+      cx.lineTo(C+r1*Math.cos(rad),C+r1*Math.sin(rad));
+      cx.stroke();
+    }
+  });
+  // particles
+  particles.forEach(p=>{
+    p.a=(p.a+p.s)%360;
+    const wob=1+.03*Math.sin(phase*90*p.w*Math.PI/180);
+    const r=p.r*wob/2, a=p.a*Math.PI/180;
+    const x=C+r*Math.cos(a), y=C+r*Math.sin(a);
+    const br=Math.random();
+    cx.beginPath();cx.fillStyle=br>.88?"#FFC773":br>.45?"#FF8C1A":"#B4530A";
+    cx.arc(x,y,p.z,0,7);cx.fill();
+  });
+  // core glow
+  const pulse=1+.06*Math.sin(phase*1.7);
+  [[3.4,"rgba(42,21,3,.9)"],[2.6,"rgba(90,42,5,.95)"],[1.9,"#9C4E07"],[1.35,"#FF8C1A"],[1,"#FFB25E"]].forEach(([sc,col])=>{
+    const r=29*sc*pulse;
+    const g=cx.createRadialGradient(C,C,0,C,C,r);
+    g.addColorStop(0,col);g.addColorStop(1,"rgba(0,0,0,0)");
+    cx.beginPath();cx.fillStyle=g;cx.arc(C,C,r,0,7);cx.fill();
+  });
+  cx.beginPath();cx.fillStyle="#FFF3E0";
+  cx.arc(C,C,29*.45*pulse,0,7);cx.fill();
+  cx.beginPath();cx.fillStyle="#38E07C";cx.font="bold 11px Consolas";
+  cx.textAlign="center";cx.fillText("CORE ACTIVE",C,292);
+  phase+=.045;
+  requestAnimationFrame(draw);
+}
+draw();
+
+/* ============ gauges ============ */
+function gauge(id,label,pct){
+  const el=$(id), r=38, circ=2*Math.PI*r, col=pct<60?"#38E07C":pct<85?"#FF8C1A":"#E05555";
+  const v=pct==null?"N/A":Math.round(pct)+"%";
+  el.innerHTML=`<svg width="100" height="100">
+    <circle cx="50" cy="50" r="${r}" stroke="rgba(255,140,26,.15)" stroke-width="8" fill="none"/>
+    <circle cx="50" cy="50" r="${r}" stroke="${col}" stroke-width="8" fill="none"
+      stroke-linecap="round" stroke-dasharray="${circ}" stroke-dashoffset="${circ*(1-(pct||0)/100)}"
+      style="transition:stroke-dashoffset .8s,stroke .4s"/></svg>
+    <div class="val" style="color:${col}">${v}</div><label>${label}</label>`;
+}
+
+/* ============ API ============ */
+async function api(path, body){
+  const opt = body ? {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}
+                    : {};
+  const res = await fetch(path, opt);
+  return res.json();
+}
+
+function addChat(cls, who, text){
+  const log=$("chatlog"), p=document.createElement("p");
+  const b=document.createElement("span"); b.className=cls; b.textContent=who+" ";
+  p.appendChild(b); p.appendChild(document.createTextNode(text));
+  log.appendChild(p); log.scrollTop=log.scrollHeight;
+}
+addChat("s","SYSTEM","Solar Dashboard connected. Type below or use the console bar, sir.");
+
+async function sendChat(){
+  const inp=$("chatin"), cmd=inp.value.trim();
+  if(!cmd) return;
+  inp.value=""; addChat("u","YOU:",cmd);
+  addChat("s","SYSTEM","processing…");
+  try{
+    const r=await api("/api/command",{command:cmd});
+    $("chatlog").lastChild.remove();
+    addChat("j","JARVIS:",r.text||r.error||"…");
+    if(TTS_ON && r.text) speakText(r.text);
+  }catch(e){ $("chatlog").lastChild.remove(); addChat("s","SYSTEM","Connection error."); }
+}
+async function quick(cmd){ addChat("u","YOU:",cmd);
+  addChat("s","SYSTEM","processing…");
+  try{ const r=await api("/api/command",{command:cmd});
+    $("chatlog").lastChild.remove(); addChat("j","JARVIS:",r.text||r.error);
+    if(TTS_ON && r.text) speakText(r.text);
+  }catch(e){ $("chatlog").lastChild.remove(); addChat("s","SYSTEM","Connection error."); } }
+function sendConsole(){ const i=$("console-in"),c=i.value.trim(); if(!c)return; i.value="";
+  document.querySelector(".chat-card").scrollIntoView({behavior:"smooth"}); quick(c); }
+$("chatin").addEventListener("keydown",e=>{if(e.key==="Enter")sendChat()});
+$("console-in").addEventListener("keydown",e=>{if(e.key==="Enter")sendConsole()});
+
+/* ============ voice ============ */
+function speakText(text){
+  try{
+    speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(text);
+    const vs=speechSynthesis.getVoices();
+    const pref=vs.find(v=>/en-gb/i.test(v.lang)&&/male|david|george|guy/i.test(v.name))||
+               vs.find(v=>/en-gb/i.test(v.lang))||vs.find(v=>/^en/i.test(v.lang));
+    if(pref) u.voice=pref;
+    u.rate=.92; u.pitch=.55; u.volume=1;   // dark synthetic profile
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+function toggleTTS(){ TTS_ON=!TTS_ON;
+  const b=$("tts-toggle"); b.textContent="TTS: "+(TTS_ON?"ON":"OFF");
+  b.classList.toggle("primary",TTS_ON); if(!TTS_ON) try{speechSynthesis.cancel()}catch(e){} }
+function voiceInput(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){ addChat("s","SYSTEM","Speech recognition not supported in this browser — use the desktop HUD's SPEAK button or type."); return; }
+  try{
+    const rec=new SR(); rec.lang="en-US"; rec.interimResults=false;
+    addChat("s","SYSTEM","Listening…");
+    rec.onresult=e=>{ const t=e.results[0][0].transcript; addChat("u","YOU:",t); quick(t); };
+    rec.onerror=()=>addChat("s","SYSTEM","Microphone unavailable or permission denied.");
+    rec.start();
+  }catch(e){ addChat("s","SYSTEM","Could not start microphone."); }
+}
+
+/* ============ polling ============ */
+function fmt(n){return n==null?"—":Math.round(n).toString()}
+async function refresh(){
+  try{
+    const s=await api("/api/state");
+    $("clock").textContent=s.time;
+    $("aname").textContent=s.assistant_name.toUpperCase();
+    gauge("g-cpu","CPU",s.system.cpu); gauge("g-mem","MEMORY",s.system.mem); gauge("g-dsk","DISK",s.system.disk);
+    $("battery").textContent="POWER "+(s.system.battery!=null?Math.round(s.system.battery)+"% BATTERY":"AC / DESKTOP");
+    const ai=$("chip-ai");
+    if(s.ai.groq_ready){ai.textContent="AI GROQ";ai.className="chip on";$("provider").textContent="groq · "+s.ai.model}
+    else{ai.textContent="AI OFFLINE";ai.className="chip warn";$("provider").textContent="offline persona"}
+    const vc=$("chip-voice"); vc.textContent=s.voice.available?"VOICE READY":"VOICE N/A";
+    vc.className="chip"+(s.voice.available?" on":" warn");
+    $("st-mem-facts").textContent=fmt(s.memory.stats.facts);
+    $("st-convos").textContent=fmt(s.memory.stats.conversations);
+    $("st-tasks").textContent=fmt(s.productivity.tasks.length);
+    $("st-grind").textContent=fmt(s.roblox.total_minutes);
+    // lists
+    const L=(id,items,empty)=>{ const el=$(id);
+      el.innerHTML=items.length?items: `<li class="empty">${empty}</li>`; };
+    L("tasks", s.productivity.tasks.map(t=>`<li><span class="dot">▸</span>${esc(t.text)}</li>`).join(""),"No open tasks. Try: add task: finish report");
+    L("notes", s.productivity.notes.map(n=>`<li><span class="dot">✦</span>${esc(n.text)}</li>`).join(""),"No notes yet. Try: take note: buy batteries");
+    L("facts", s.memory.facts.map(f=>`<li><span class="dot">◆</span><b>${esc(f.key.replace(/_/g," "))}</b>&nbsp;— ${esc(f.value)}</li>`).join(""),"No memories yet. Try: remember favorite color is blue");
+    // roblox
+    const rb=s.roblox, sess=$("rb-session");
+    if(rb.session){ sess.className="rb-session";
+      sess.textContent=`SESSION ACTIVE · ${rb.session.remaining} min left · focus: ${rb.session.focus||"free grind"}`; }
+    else{ sess.className="rb-session idle"; sess.textContent="NO ACTIVE SESSION"; }
+    $("rb-goals").innerHTML=rb.goals.length?
+      rb.goals.map(g=>`<div class="goal ${g.done?"x":""}">${g.done?"[x]":"[ ]"} ${esc(g.text)}</div>`).join(""):
+      `<div class="empty">No goals set.</div>`;
+    $("rb-stats").textContent=`${rb.sessions_logged} sessions · ${rb.total_minutes} lifetime minutes`;
+  }catch(e){ $("chip-ai").textContent="SERVER?"; $("chip-ai").className="chip warn"; }
+}
+function esc(s){const d=document.createElement("div");d.textContent=s;return d.innerHTML}
+refresh(); setInterval(refresh,2000);
+try{ speechSynthesis.getVoices(); }catch(e){}
+</script>
+</body>
+</html>

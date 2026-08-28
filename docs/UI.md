@@ -1,11 +1,36 @@
-# Solar Core HUD — UI Guide
+# UI Guide — Solar Core HUD + Web Dashboard
 
-The Jarvis V2 desktop interface (`gui/main_window.py`) is a cinematic, black-and-orange
-holographic HUD built with pure Tkinter — no web framework, no extra dependencies.
+Jarvis V2 ships **two interfaces**, both in the same black-and-orange Solar style:
+
+1. **Solar Core HUD** (`gui/main_window.py`) — native Tkinter desktop app (default)
+2. **Solar Web Dashboard** (`dashboard/`) — Spark-style browser dashboard via
+   `python main.py --web` → `http://localhost:8765`
 
 ![UI mockup](images/jarvis_v2_solar_core_ui_mockup.png)
 
-## Concept
+## Solar Web Dashboard (Spark-style)
+
+Run `python main.py --web` and open **http://localhost:8765** (same machine) or
+`http://<your-pc-ip>:8765` from a phone/tablet on the same network.
+
+| Card | Contents |
+| --- | --- |
+| Hero | Canvas solar-core animation, assistant name, live stat tiles (memories, conversations, open tasks, grind minutes) |
+| System Telemetry | Circular CPU / MEMORY / DISK gauges with color thresholds + power line |
+| AI Console | Full chat with Jarvis; browser speaks replies (Web Speech API, deep-synthetic profile) with a TTS toggle |
+| Tasks / Notes | Live from the productivity store |
+| Memory Core | Facts Jarvis remembers (SQLite) |
+| Roblox · Safe Mode | Session countdown, goals checklist, lifetime grind stats, quick buttons |
+| Quick Actions | One-click commands (status, time, joke, screenshot, music…) |
+| Bottom console | Fixed command bar with SEND / SPEAK / ROBLOX / GRIND |
+
+**Under the hood:** `dashboard/server.py` uses only the Python standard library
+(`http.server`) — `GET /api/state` returns the full snapshot (polled every 2 s) and
+`POST /api/command` runs any command through the same Jarvis pipeline. Server-side
+TTS is off by design: the browser speaks, so audio lands on the machine running
+the browser.
+
+## Desktop HUD: Solar Core
 
 A "solar core": a glowing energy sphere at the center of the screen, wrapped in dense
 orbiting particle rings and long radial scan beams. Everything else in the UI is kept

@@ -2,6 +2,7 @@
 
 Run:
   python main.py             # desktop UI
+  python main.py --web       # Spark-style web dashboard (browser)
   python main.py --voice-only # pure voice assistant
   python main.py --command "system status" # one command
 """
@@ -65,14 +66,26 @@ def run_gui() -> int:
     return 0
 
 
+def run_web(port: int) -> int:
+    setup_logging(console=True)
+    from dashboard.server import serve
+
+    serve(port)
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="J.A.R.V.I.S V2 desktop AI assistant")
     parser.add_argument("--voice-only", action="store_true", help="Run without GUI or command text output")
+    parser.add_argument("--web", action="store_true", help="Run the Solar web dashboard (browser)")
+    parser.add_argument("--port", type=int, default=8765, help="Port for the web dashboard")
     parser.add_argument("--command", help="Run a single text command and exit")
     args = parser.parse_args()
 
     if args.command:
         return run_command(args.command)
+    if args.web:
+        return run_web(args.port)
     if args.voice_only:
         return run_voice_only()
     return run_gui()

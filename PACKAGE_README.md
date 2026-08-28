@@ -51,8 +51,15 @@ if you ever paste a key into a chat, revoke it and create a new one.
 | Mode | Command |
 | --- | --- |
 | Solar Core HUD (default) | `python main.py` |
+| **Web Dashboard (Spark-style)** | `python main.py --web` → open http://localhost:8765 |
 | Voice only, no window | `python main.py --voice-only` |
 | One command, then exit | `python main.py --command "system status"` |
+
+The **Web Dashboard** is a glassmorphism control center in your browser: circular
+CPU/MEM/DISK gauges, AI chat console, tasks/notes/memory cards, Roblox session
+panel, quick actions, and browser-side voice replies. It runs on Python's standard
+library only — no extra dependencies. Open `http://<your-pc-ip>:8765` from a phone
+on the same network to control your PC from the couch.
 
 ## Try these first
 

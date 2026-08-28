@@ -5,7 +5,10 @@
     "owner_name": "sir"
   },
   "voice": {
-    "wake_words": ["hey jarvis", "jarvis"],
+    "wake_words": [
+      "hey jarvis",
+      "jarvis"
+    ],
     "continuous_listening": true,
     "tts_enabled": true,
     "voice_profile": "dark_synthetic"
@@ -24,5 +27,8 @@
   "roblox": {
     "allow_web_open": true,
     "default_session_minutes": 30
+  },
+  "applications": {
+    "paths": {}
   }
 }

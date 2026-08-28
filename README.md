@@ -300,6 +300,19 @@ Hey Jarvis, maximize window
 Hey Jarvis, snap window left
 ```
 
+> **App not on PATH?** Jarvis already checks Program Files, `%LOCALAPPDATA%`,
+> macOS `/Applications` names, and Windows' App Paths registry automatically.
+> If an app still won't launch, tell it exactly where the executable lives in
+> `config/config.json`:
+>
+> ```json
+> "applications": {
+>   "paths": {
+>     "chrome": "C:/Program Files/Google/Chrome/Application/chrome.exe"
+>   }
+> }
+> ```
+
 **Screenshots, files & folders**
 ```text
 Hey Jarvis, take screenshot

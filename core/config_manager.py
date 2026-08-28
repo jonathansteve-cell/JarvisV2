@@ -58,6 +58,9 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "allow_web_open": True,
         "default_session_minutes": 30,
     },
+    "applications": {
+        "paths": {},
+    },
     "ui": {
         "theme": "hero_orb",
         "accent": "#FF8C1A",

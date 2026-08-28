@@ -1,8 +1,8 @@
-"""Arc Core HUD interface for Jarvis V2.
+"""Hero Core HUD interface for Jarvis V2.
 
 A cinematic black + cyan holographic desktop UI:
 
-- animated arc core with dense orbiting particle rings and radial scan beams
+- animated hero core with dense orbiting particle rings and radial scan beams
 - top navigation: HOME / AI / DASHBOARD
 - slim bottom command console with SEND / SPEAK / ROBLOX / GRIND
 - live telemetry (CPU, MEM, DSK, VOICE, AI, CORE) around the core and dashboard
@@ -28,16 +28,16 @@ except Exception:  # pragma: no cover
     psutil = None  # type: ignore
 
 # ---------------------------------------------------------------- palette
-BG = "#020A10"
-PANEL = "#04121C"
-PANEL_LINE = "#0E3A4C"
-CYAN = "#19E6F2"
-CYAN_BRIGHT = "#7FF3FF"
-CYAN_SOFT = "#B8F7FF"
-CYAN_DEEP = "#0E7C8A"
-CYAN_DIM = "#11414F"
-TEXT = "#DFF9FF"
-MUTED = "#6E93A8"
+BG = "#050505"
+PANEL = "#0C0C0C"
+PANEL_LINE = "#241407"
+ORANGE = "#FF8C1A"
+ORANGE_BRIGHT = "#FFB25E"
+ORANGE_SOFT = "#FFC773"
+ORANGE_DEEP = "#B4530A"
+ORANGE_DIM = "#5A2E06"
+TEXT = "#F5EDE0"
+MUTED = "#9A8F7F"
 GREEN = "#38E07C"
 RED = "#E05555"
 
@@ -45,49 +45,45 @@ PLACEHOLDER = "Type command or press Speak..."
 
 
 class SolarCoreCanvas(tk.Canvas):
-    """Animated arc core: glowing center, particle orbits, radial beams."""
+    """Hero core view: photoreal sun image with twinkling sparkle stars."""
 
-    def __init__(self, master: Any, width: int = 420, height: int = 420, **kwargs: Any) -> None:
+    def __init__(self, master: Any, width: int = 560, height: int = 400, **kwargs: Any) -> None:
         super().__init__(master, width=width, height=height, bg=BG, highlightthickness=0, **kwargs)
         self.size = width
-        self.center = width / 2
-        self.core_radius = width * 0.085
         self._phase = 0.0
         self._running = True
-        self._particles = self._make_particles()
-        self._beams = self._make_beams()
+        self._orb_photo = None
+        self._telemetry: list[tuple[str, str]] = []
+        self._stars = [
+            {
+                "x": random.uniform(8, width - 8),
+                "y": random.uniform(8, height - 30),
+                "size": random.uniform(1.2, 3.0),
+                "phase": random.uniform(0, math.tau),
+                "speed": random.uniform(0.4, 1.3),
+            }
+            for _ in range(46)
+        ]
+        self._load_orb()
         self._animate()
 
-    # ------------------------------------------------------------ scene setup
-    def _make_particles(self) -> list[dict[str, float]]:
-        particles: list[dict[str, float]] = []
-        rings = [
-            (0.30, 34, 0.55, 2.2),
-            (0.38, 30, -0.40, 1.8),
-            (0.46, 26, 0.30, 1.5),
-            (0.55, 18, -0.22, 1.2),
-        ]
-        for radius_scale, count, speed, size in rings:
-            for index in range(count):
-                particles.append(
-                    {
-                        "radius": self.size * radius_scale + random.uniform(-6, 6),
-                        "angle": random.uniform(0, 360),
-                        "speed": speed + random.uniform(-0.08, 0.08),
-                        "size": size,
-                        "wobble": random.uniform(0.6, 1.4),
-                    }
-                )
-        return particles
+    def _load_orb(self) -> None:
+        """Load the photoreal orb asset when available."""
+        from pathlib import Path
 
-    def _make_beams(self) -> list[dict[str, float]]:
-        return [
-            {"angle": angle, "speed": speed, "length": random.uniform(0.42, 0.52)}
-            for angle, speed in zip(
-                random.sample(range(0, 360, 20), 8),
-                [random.uniform(0.10, 0.35) * random.choice([-1, 1]) for _ in range(8)],
-            )
-        ]
+        for candidate in (
+            Path(__file__).resolve().parent.parent / "docs" / "images" / "hero_orb.png",
+            Path("docs/images/hero_orb.png"),
+        ):
+            if candidate.exists():
+                try:
+                    photo = tk.PhotoImage(file=str(candidate))
+                    while photo.width() > self.size - 12 or photo.height() > self.height - 12:
+                        photo = photo.subsample(2, 2)
+                    self._orb_photo = photo
+                    return
+                except Exception:
+                    return
 
     # ------------------------------------------------------------- telemetry
     def set_telemetry(self, lines: list[tuple[str, str]]) -> None:
@@ -102,68 +98,36 @@ class SolarCoreCanvas(tk.Canvas):
         if not self._running:
             return
         self.delete("all")
-        c = self.center
-        phase = self._phase
+        c = self.size / 2
+        mid_y = self.height / 2 - 8
 
-        # Thin orbit rings.
-        for radius_scale, dash in ((0.30, (2, 6)), (0.46, (2, 8)), (0.55, (1, 10))):
-            radius = self.size * radius_scale
-            self.create_oval(
-                c - radius, c - radius, c + radius, c + radius,
-                outline=CYAN_DIM, width=1, dash=dash,
-            )
+        # Photoreal orb image.
+        if self._orb_photo is not None:
+            self.create_image(c, mid_y, image=self._orb_photo)
 
-        # Long radial scan beams.
-        for beam in self._beams:
-            beam["angle"] = (beam["angle"] + beam["speed"]) % 360
-            length = self.size * beam["length"]
-            inner = self.core_radius + 14
-            for step, color in enumerate((CYAN_DEEP, CYAN, CYAN_SOFT)):
-                start = math.radians(beam["angle"] - (2 - step) * 1.6)
-                segment_inner = inner + (length / 3.2) * step
-                segment_outer = inner + (length / 3.2) * (step + 1)
-                self.create_line(
-                    c + segment_inner * math.cos(start), c + segment_inner * math.sin(start),
-                    c + segment_outer * math.cos(start), c + segment_outer * math.sin(start),
-                    fill=color, width=2 if step == 2 else 1,
-                )
+        # Twinkling four-point sparkle stars.
+        for star in self._stars:
+            twinkle = 0.25 + 0.75 * abs(math.sin(self._phase * star["speed"] + star["phase"]))
+            length = star["size"] * 2.6 * twinkle
+            color = "#FFE9C9" if twinkle > 0.72 else ORANGE_BRIGHT if twinkle > 0.4 else ORANGE_DEEP
+            x, y = star["x"], star["y"]
+            self.create_line(x - length, y, x + length, y, fill=color, width=1)
+            self.create_line(x, y - length, x, y + length, fill=color, width=1)
 
-        # Dense particle orbits.
-        for particle in self._particles:
-            particle["angle"] = (particle["angle"] + particle["speed"]) % 360
-            wobble = 1 + 0.03 * math.sin(math.radians(phase * 90 * particle["wobble"]))
-            radius = particle["radius"] * wobble
-            angle = math.radians(particle["angle"])
-            x = c + radius * math.cos(angle)
-            y = c + radius * math.sin(angle)
-            size = particle["size"]
-            brightness = random.random()
-            color = CYAN_SOFT if brightness > 0.88 else CYAN if brightness > 0.45 else CYAN_DEEP
-            self.create_oval(x - size, y - size, x + size, y + size, fill=color, outline="")
+        self.create_text(c, self.size - 14, text="CORE ACTIVE", fill="#38E07C", font=("Consolas", 11, "bold"))
 
-        # Solar core: layered glow.
-        pulse = 1 + 0.06 * math.sin(phase * 1.7)
-        for scale, color in ((3.4, "#03222E"), (2.6, "#06384A"), (1.9, "#0C8EA0"), (1.35, CYAN), (1.0, CYAN_BRIGHT)):
-            radius = self.core_radius * scale * pulse
-            self.create_oval(c - radius, c - radius, c + radius, c + radius, fill=color, outline="")
-        flare = self.core_radius * 0.45 * pulse
-        self.create_oval(c - flare, c - flare, c + flare, c + flare, fill="#E8FDFF", outline="")
-
-        # Core label.
-        self.create_text(c, self.size - 14, text="CORE ACTIVE", fill=GREEN, font=("Consolas", 11, "bold"))
-
-        self._phase += 0.045
-        self.after(55, self._animate)
+        self._phase += 0.05
+        self.after(80, self._animate)
 
 
 class JarvisMainWindow:
-    """J.A.R.V.I.S V2 Arc Core HUD."""
+    """J.A.R.V.I.S V2 Hero Core HUD."""
 
     def __init__(self) -> None:
         self.jarvis = Jarvis()
         self.recognizer = SpeechRecognitionEngine(self.jarvis.config)
         self.root = tk.Tk()
-        self.root.title("J.A.R.V.I.S V2 — Arc Core")
+        self.root.title("J.A.R.V.I.S V2 — Hero Core")
         self.root.geometry("1180x760")
         self.root.minsize(1000, 660)
         self.root.configure(bg=BG)
@@ -192,22 +156,23 @@ class JarvisMainWindow:
         bar.pack_propagate(False)
 
         title = tk.Label(
-            bar, text="J.A.R.V.I.S V2", fg=CYAN, bg=PANEL,
+            bar, text="J.A.R.V.I.S V2", fg=ORANGE, bg=PANEL,
             font=("Segoe UI", 13, "bold"),
         )
         title.pack(side="left", padx=(18, 6))
 
         self._nav_buttons: dict[str, tk.Label] = {}
+        nav_labels = {"home": "✦ Home", "ai": "🗨 Chat", "dashboard": "▦ Dashboard"}
         for name in ("home", "ai", "dashboard"):
             label = tk.Label(
-                bar, text=name.upper(), fg=MUTED, bg=PANEL,
-                font=("Segoe UI", 10, "bold"), cursor="hand2", padx=12,
+                bar, text=nav_labels[name], fg=MUTED, bg=PANEL,
+                font=("Segoe UI", 10), cursor="hand2", padx=12,
             )
             label.pack(side="left", pady=8)
             label.bind("<Button-1>", lambda _event, view=name: self._show_view(view))
-            label.bind("<Enter>", lambda _event, widget=label: widget.configure(fg=CYAN_SOFT))
-            label.bind("<Leave>", lambda _event, widget=label: widget.configure(
-                fg=CYAN if widget in self._nav_buttons.values() and widget.cget("text").lower() == self._active_view else MUTED
+            label.bind("<Enter>", lambda _event, widget=label: widget.configure(fg=ORANGE_SOFT))
+            label.bind("<Leave>", lambda _event, view=name, widget=label: widget.configure(
+                fg=ORANGE if view == self._active_view else MUTED
             ))
             self._nav_buttons[name] = label
 
@@ -234,14 +199,14 @@ class JarvisMainWindow:
         self.container.grid_columnconfigure(0, weight=1)
         self._active_view = "home"
 
-        # HOME — arc core hero.
+        # HOME — photoreal hero core.
         self.view_home = tk.Frame(self.container, bg=BG)
         self.view_home.grid(row=0, column=0, sticky="nsew")
-        self.solar = SolarCoreCanvas(self.view_home, width=460, height=460)
+        self.solar = SolarCoreCanvas(self.view_home, width=580, height=430)
         self.solar.pack(expand=True, pady=(18, 4))
         self._telemetry = {"cpu": "--", "mem": "--", "dsk": "--"}
         self._telemetry_label = tk.Label(
-            self.view_home, text="", fg=CYAN_SOFT, bg=BG, font=("Consolas", 11),
+            self.view_home, text="", fg=ORANGE_SOFT, bg=BG, font=("Consolas", 11),
         )
         self._telemetry_label.pack(pady=(0, 10))
 
@@ -262,12 +227,12 @@ class JarvisMainWindow:
         ai_header.grid(row=0, column=0, sticky="w", padx=22, pady=(14, 6))
 
         self.chat = scrolledtext.ScrolledText(
-            self.view_ai, bg=PANEL, fg=TEXT, insertbackground=CYAN,
+            self.view_ai, bg=PANEL, fg=TEXT, insertbackground=ORANGE,
             relief="flat", wrap="word", font=("Segoe UI", 11),
         )
         self.chat.grid(row=1, column=0, sticky="nsew", padx=22, pady=(0, 14))
-        self.chat.tag_config("user", foreground=CYAN_SOFT)
-        self.chat.tag_config("jarvis", foreground=CYAN)
+        self.chat.tag_config("user", foreground=ORANGE_SOFT)
+        self.chat.tag_config("jarvis", foreground=ORANGE)
         self.chat.tag_config("system", foreground=MUTED)
         self.chat.configure(state="disabled")
 
@@ -277,10 +242,10 @@ class JarvisMainWindow:
 
         left = tk.Frame(self.view_dashboard, bg=BG)
         left.pack(side="left", fill="both", expand=True, padx=(24, 10), pady=20)
-        tk.Label(left, text="SYSTEM TELEMETRY", fg=CYAN, bg=BG, font=("Consolas", 11, "bold")).pack(anchor="w")
+        tk.Label(left, text="SYSTEM TELEMETRY", fg=ORANGE, bg=BG, font=("Consolas", 11, "bold")).pack(anchor="w")
         self.bars_canvas = tk.Canvas(left, width=430, height=150, bg=BG, highlightthickness=0)
         self.bars_canvas.pack(anchor="w", pady=10)
-        tk.Label(left, text="QUICK ACTIONS", fg=CYAN, bg=BG, font=("Consolas", 11, "bold")).pack(anchor="w", pady=(12, 6))
+        tk.Label(left, text="QUICK ACTIONS", fg=ORANGE, bg=BG, font=("Consolas", 11, "bold")).pack(anchor="w", pady=(12, 6))
         actions = tk.Frame(left, bg=BG)
         actions.pack(anchor="w")
         for column, (text, command) in enumerate([
@@ -301,12 +266,12 @@ class JarvisMainWindow:
             style.theme_use("clam")
         except Exception:
             pass
-        style.configure("Solar.TButton", background="#0A2230", foreground=TEXT, borderwidth=1)
-        style.map("Solar.TButton", background=[("active", "#123A4C")])
+        style.configure("Solar.TButton", background="#1A0F04", foreground=TEXT, borderwidth=1)
+        style.map("Solar.TButton", background=[("active", "#2A1806")])
 
         right = tk.Frame(self.view_dashboard, bg=PANEL, highlightbackground=PANEL_LINE, highlightthickness=1)
         right.pack(side="right", fill="both", expand=True, padx=(10, 24), pady=20)
-        tk.Label(right, text="ROBLOX · SAFE MODE", fg=CYAN, bg=PANEL, font=("Consolas", 11, "bold")).pack(anchor="w", padx=18, pady=(16, 2))
+        tk.Label(right, text="ROBLOX · SAFE MODE", fg=ORANGE, bg=PANEL, font=("Consolas", 11, "bold")).pack(anchor="w", padx=18, pady=(16, 2))
         tk.Label(
             right,
             text=("Official links, grind sessions, goals and progress only.\n"
@@ -335,7 +300,7 @@ class JarvisMainWindow:
         frames = {"home": self.view_home, "ai": self.view_ai, "dashboard": self.view_dashboard}
         frames[view].tkraise()
         for name, label in self._nav_buttons.items():
-            label.configure(fg=CYAN if name == view else MUTED)
+            label.configure(fg=ORANGE if name == view else MUTED)
         if view == "dashboard":
             self._refresh_roblox_panel()
 
@@ -349,7 +314,7 @@ class JarvisMainWindow:
         inner.grid_columnconfigure(0, weight=1)
 
         self.entry = tk.Entry(
-            inner, bg="#07202E", fg=TEXT, insertbackground=CYAN,
+            inner, bg="#120A03", fg=TEXT, insertbackground=ORANGE,
             relief="flat", font=("Segoe UI", 12),
         )
         self.entry.grid(row=0, column=0, sticky="ew", ipady=9, padx=(4, 10))
@@ -367,7 +332,7 @@ class JarvisMainWindow:
             width = 8 if text in ("SEND", "SPEAK") else 9
             tk.Button(
                 inner, text=text, command=handler, width=width,
-                bg="#0A2230", fg=CYAN_BRIGHT, activebackground="#123A4C",
+                bg="#1A0F04", fg=ORANGE_BRIGHT, activebackground="#2A1806",
                 activeforeground=TEXT, relief="flat", font=("Segoe UI", 10, "bold"),
                 cursor="hand2",
             ).grid(row=0, column=column + 1, padx=4, ipady=7)
@@ -491,10 +456,10 @@ class JarvisMainWindow:
         ):
             y = 18 + row * 46
             canvas.create_text(0, y, text=label, anchor="w", fill=TEXT, font=("Consolas", 10))
-            canvas.create_rectangle(90, y - 8, width, y + 8, outline=PANEL_LINE, fill="#07202E")
+            canvas.create_rectangle(90, y - 8, width, y + 8, outline=PANEL_LINE, fill="#120A03")
             if value is not None:
                 fill_width = 90 + (width - 90) * (value / 100.0)
-                color = GREEN if value < 60 else CYAN if value < 85 else RED
+                color = GREEN if value < 60 else ORANGE if value < 85 else RED
                 canvas.create_rectangle(90, y - 8, fill_width, y + 8, outline="", fill=color)
                 canvas.create_text(width, y, text=f"{value:.0f}%", anchor="e", fill=TEXT, font=("Consolas", 9))
             else:

@@ -3,256 +3,170 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>J.A.R.V.I.S V2 · Dashboard</title>
+<title>J.A.R.V.I.S V2</title>
 <style>
   :root{
-    --bg:#020A10; --card:rgba(6,28,40,.55); --card-solid:#03141E;
-    --line:rgba(25,230,242,.30); --line-soft:rgba(25,230,242,.14);
-    --cyan:#19E6F2; --bright:#7FF3FF; --soft:#B8F7FF; --deep:#0E7C8A;
-    --text:#DFF9FF; --muted:#6E93A8; --green:#3AF07C; --red:#FF4D5E;
+    --bg:#000; --card:rgba(20,10,2,.72); --line:rgba(255,140,26,.38); --line-soft:rgba(255,140,26,.16);
+    --orange:#FF8C1A; --bright:#FFB25E; --soft:#FFC773; --deep:#B4530A;
+    --text:#F5EDE0; --muted:#9A8F7F; --green:#38E07C; --red:#FF5555;
   }
   *{margin:0;padding:0;box-sizing:border-box}
-  body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;
-       min-height:100vh;display:flex;flex-direction:column;
-       background-image:radial-gradient(ellipse 90% 60% at 50% -20%,rgba(25,230,242,.07),transparent),
-                        linear-gradient(rgba(25,230,242,.03) 1px,transparent 1px),
-                        linear-gradient(90deg,rgba(25,230,242,.03) 1px,transparent 1px);
-       background-size:auto,44px 44px,44px 44px}
-  body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:99;
-       background:repeating-linear-gradient(0deg,rgba(25,230,242,.028) 0 1px,transparent 1px 3px)}
+  html,body{background:#000;color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;height:100%}
+  body{display:flex;flex-direction:column;overflow:hidden}
   ::-webkit-scrollbar{width:7px;height:7px}
-  ::-webkit-scrollbar-thumb{background:#0E3A4C;border-radius:4px}
-  ::-webkit-scrollbar-track{background:transparent}
-  h3.box-label{display:inline-block;margin:-25px 0 12px -4px;background:var(--card-solid);
-       border:1px solid var(--line);padding:4px 12px;font-family:Consolas,monospace;
-       font-size:10px;letter-spacing:2.5px;color:var(--cyan);font-weight:700;position:relative;z-index:2}
-  h3.box-label em{float:right;font-style:normal;color:var(--muted);letter-spacing:1px;margin-left:14px;font-size:9px}
+  ::-webkit-scrollbar-thumb{background:#3A2408;border-radius:4px}
 
-  /* ---------- top bar ---------- */
-  nav{display:flex;align-items:center;gap:14px;padding:12px 22px;
-      background:rgba(2,12,18,.9);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10;
-      backdrop-filter:blur(8px)}
-  .logo{border:1px solid var(--line);padding:7px 16px;font-family:Consolas,monospace;font-weight:700;
-        font-size:15px;letter-spacing:2px;color:var(--cyan);background:var(--card-solid);
-        box-shadow:0 0 14px rgba(25,230,242,.15), inset 0 0 14px rgba(25,230,242,.06)}
-  .chip{font-family:Consolas,monospace;font-size:10px;padding:4px 10px;border-radius:3px;
-        border:1px solid var(--line);color:var(--muted);letter-spacing:1px;background:rgba(3,20,30,.6)}
-  .chip.on{color:var(--green);border-color:rgba(58,240,124,.45)}
-  .chip.warn{color:var(--red);border-color:rgba(255,77,94,.45)}
-  #clock{margin-left:auto;font-family:Consolas,monospace;font-size:20px;color:var(--bright);letter-spacing:3px}
+  /* ---------- sparkle starfield ---------- */
+  #stars{position:fixed;inset:0;z-index:0;pointer-events:none}
 
-  /* ---------- layout ---------- */
-  .wrap{display:grid;grid-template-columns:290px 1fr;gap:20px;padding:26px 22px 120px;flex:1}
-  .side{display:flex;flex-direction:column;gap:26px}
-  .main{display:flex;flex-direction:column;gap:26px;min-width:0}
-  .row{display:grid;gap:20px}
-  .row.cols-3{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
-  .row.cols-2{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
-  @media(max-width:980px){.wrap{grid-template-columns:1fr}}
+  /* ---------- top nav (photo style: centered icons) ---------- */
+  nav{position:relative;z-index:5;display:flex;justify-content:center;align-items:center;gap:44px;
+      padding:13px 20px 11px;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);
+      border-bottom:1px solid rgba(255,140,26,.14)}
+  .nav-item{display:flex;align-items:center;gap:8px;font-size:13.5px;color:#EDE4D6;cursor:pointer;
+      padding:4px 10px;border-radius:6px;user-select:none;letter-spacing:.2px}
+  .nav-item .ico{font-size:12px;color:var(--orange)}
+  .nav-item:hover{color:#fff}
+  .nav-item.active{border-bottom:2px solid var(--orange);border-radius:0}
+  #top-status{position:absolute;right:20px;top:50%;transform:translateY(-50%);
+      font-family:Consolas,monospace;font-size:10.5px;letter-spacing:1.5px;color:var(--muted)}
+  #top-status b{color:var(--green);font-weight:400}
 
-  .card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:24px 16px 16px;
-        position:relative;backdrop-filter:blur(5px);
-        box-shadow:inset 0 0 22px rgba(25,230,242,.05), 0 0 10px rgba(25,230,242,.06)}
-  .card::before,.card::after{content:"";position:absolute;width:14px;height:14px;border-color:var(--cyan);border-style:solid}
-  .card::before{top:-1px;left:-1px;border-width:2px 0 0 2px;border-radius:8px 0 0 0}
-  .card::after{bottom:-1px;right:-1px;border-width:0 2px 2px 0;border-radius:0 0 8px 0}
+  /* ---------- views ---------- */
+  main{position:relative;z-index:2;flex:1;overflow:hidden}
+  .view{position:absolute;inset:0;display:none;overflow-y:auto}
+  .view.active{display:block}
 
-  /* ---------- camera ---------- */
-  #cam{width:100%;height:150px;object-fit:cover;border:1px solid var(--line-soft);border-radius:4px;background:#02080D;display:block}
-  .cam-off{height:150px;display:flex;align-items:center;justify-content:center;color:var(--muted);
-        font-family:Consolas,monospace;font-size:11px;letter-spacing:2px;border:1px dashed var(--line-soft);border-radius:4px;text-align:center;padding:10px}
-  .sysline{font-family:Consolas,monospace;font-size:10px;color:var(--muted);letter-spacing:1px;padding:6px 2px 2px;display:flex;justify-content:space-between}
-  .sysline b{color:var(--cyan);font-weight:400}
-  .btn-red{background:rgba(255,77,94,.12);color:var(--red);border:1px solid rgba(255,77,94,.5)}
-  .btn-red:hover{background:rgba(255,77,94,.25);box-shadow:0 0 12px rgba(255,77,94,.3);color:#fff}
+  /* HOME — photoreal sun hero, exactly like the photo */
+  #view-home{display:none;align-items:center;justify-content:center}
+  #view-home.active{display:flex}
+  .hero{display:flex;flex-direction:column;align-items:center;justify-content:center;
+        height:100%;padding:8px 20px 96px}
+  #orb{max-width:min(72vh,760px);max-height:66vh;width:auto;filter:drop-shadow(0 0 60px rgba(255,110,20,.25));
+       animation:orbPulse 6s ease-in-out infinite}
+  @keyframes orbPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.015);opacity:.96}}
+  .telemetry{margin-top:-8px;font-family:Consolas,monospace;font-size:16px;letter-spacing:2px;color:var(--orange)}
+  .core-chip{margin-top:10px;font-family:Consolas,monospace;font-size:10.5px;letter-spacing:2px;
+      color:var(--green);border:1px solid rgba(56,224,124,.55);border-radius:3px;padding:4px 12px;
+      background:rgba(6,20,10,.5)}
 
-  /* ---------- brain ---------- */
-  #brain{width:100%;height:150px;display:block;border:1px solid var(--line-soft);border-radius:4px;background:#02080D}
+  /* CHAT + DASHBOARD shared card style */
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:10px;
+      backdrop-filter:blur(4px);box-shadow:inset 0 0 24px rgba(255,140,26,.05)}
+  .panel h3{font-family:Consolas,monospace;font-size:10.5px;letter-spacing:2.5px;color:var(--orange);
+      padding:10px 14px;border-bottom:1px solid var(--line-soft)}
+  .panel h3 em{float:right;font-style:normal;color:var(--muted);font-size:9.5px;letter-spacing:1px}
 
-  /* ---------- status ---------- */
-  .ready{font-family:Consolas,monospace;font-size:26px;color:var(--green);letter-spacing:5px;text-align:center;
-         text-shadow:0 0 16px rgba(58,240,124,.5);padding:8px 0 2px}
-  .ready-sub{text-align:center;color:var(--muted);font-size:10px;letter-spacing:2px;font-family:Consolas,monospace;padding-bottom:10px}
-  .mini-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-  .mini-btns button{font-size:10px;padding:8px 4px;letter-spacing:1px}
-
-  /* ---------- generic ---------- */
-  button{background:#0A2230;color:var(--bright);border:1px solid var(--line);border-radius:4px;
-       padding:9px 14px;font-family:Consolas,monospace;font-weight:700;font-size:11px;letter-spacing:1px;
-       cursor:pointer;transition:.15s}
-  button:hover{background:#123A4C;color:#fff;box-shadow:0 0 14px rgba(25,230,242,.35)}
-  button.green{background:rgba(58,240,124,.14);color:var(--green);border-color:rgba(58,240,124,.55)}
-  button.green:hover{background:rgba(58,240,124,.28);box-shadow:0 0 14px rgba(58,240,124,.35)}
-  input[type=text]{background:rgba(25,230,242,.05);border:1px solid var(--line);border-radius:4px;
-       padding:10px 13px;color:var(--soft);font-size:13px;outline:none;font-family:Consolas,monospace}
-  input[type=text]:focus{border-color:var(--cyan);box-shadow:0 0 12px rgba(25,230,242,.3)}
-  input::placeholder{color:var(--muted)}
-
-  ul.list{list-style:none;font-size:12.5px;font-family:Consolas,monospace}
-  ul.list li{padding:7px 2px;border-bottom:1px dashed var(--line-soft);display:flex;gap:8px;align-items:baseline}
-  ul.list li:last-child{border-bottom:none}
-  .dot{color:var(--cyan)}
-  .empty{color:var(--muted);font-size:11px;font-style:italic;font-family:'Segoe UI',sans-serif}
-  .add-row{display:flex;gap:8px;margin-top:10px}
-  .add-row input{flex:1;min-width:0;font-size:11px;padding:8px 10px}
-  .add-row button{font-size:10px;padding:8px 10px}
-
-  /* inbox rows */
-  .mail{display:flex;align-items:baseline;gap:8px;padding:6px 2px;border-bottom:1px dashed var(--line-soft);
-        font-family:Consolas,monospace;font-size:11px}
-  .mail:last-child{border-bottom:none}
-  .mail .who{color:var(--cyan);white-space:nowrap}
-  .mail .what{color:var(--soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1}
-  .mail .when{color:var(--muted);font-size:10px}
-
-  /* chat */
-  .chat-head{display:flex;align-items:center;gap:16px;margin-bottom:10px}
-  #radar{width:74px;height:74px;flex:0 0 auto}
-  #chatlog{flex:1;overflow-y:auto;max-height:300px;min-height:180px;font-size:13px;line-height:1.55;padding-right:6px}
-  #chatlog .u{color:var(--soft)} #chatlog .j{color:var(--cyan)}
+  #view-chat.active{display:flex;flex-direction:column;padding:22px 26px 110px;gap:0}
+  #chatlog{flex:1;overflow-y:auto;font-size:13.5px;line-height:1.6;padding:16px}
+  #chatlog .u{color:var(--soft)} #chatlog .j{color:var(--orange)}
   #chatlog .s{color:var(--muted);font-size:11px}
-  #chatlog p{margin:6px 0}
-  .chat-in{display:flex;gap:8px;margin-top:12px}
-  .chat-in input{flex:1}
+  #chatlog p{margin:7px 0}
+  .chat-in{display:flex;gap:10px;padding:14px;border-top:1px solid var(--line-soft)}
+  input[type=text]{flex:1;background:rgba(255,140,26,.05);border:1px solid var(--line);border-radius:8px;
+      padding:12px 15px;color:var(--soft);font-size:14px;outline:none}
+  input[type=text]:focus{border-color:var(--orange);box-shadow:0 0 14px rgba(255,140,26,.25)}
+  input::placeholder{color:var(--muted)}
+  button{background:rgba(30,15,3,.85);color:var(--bright);border:1px solid var(--line);border-radius:8px;
+      padding:11px 18px;font-family:Consolas,monospace;font-weight:700;font-size:12px;letter-spacing:1px;
+      cursor:pointer;transition:.15s}
+  button:hover{background:#331C06;color:#fff;box-shadow:0 0 14px rgba(255,140,26,.35)}
 
-  /* gauges */
-  .gauges{display:flex;justify-content:space-around;gap:6px;flex-wrap:wrap}
+  #view-dash.active{display:block;padding:22px 26px 110px}
+  .dash-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:18px}
+  .dash-grid .wide{grid-column:span 2}
+  @media(max-width:780px){.dash-grid .wide{grid-column:span 1}}
+
+  ul.list{list-style:none;font-size:12.5px;font-family:Consolas,monospace;padding:8px 14px}
+  ul.list li{padding:7px 2px;border-bottom:1px dashed var(--line-soft);display:flex;gap:8px}
+  ul.list li:last-child{border:none}
+  .dot{color:var(--orange)}
+  .empty{color:var(--muted);font-size:11.5px;font-style:italic;font-family:'Segoe UI',sans-serif;padding:10px 14px}
+  .add-row{display:flex;gap:8px;padding:0 14px 14px}
+  .add-row input{font-size:11.5px;padding:9px 11px}
+  .add-row button{font-size:10px;padding:9px 12px}
+
+  .gauges{display:flex;justify-content:space-around;padding:14px 8px 6px;flex-wrap:wrap}
   .gauge{text-align:center}
   .gauge svg{transform:rotate(-90deg)}
-  .gauge .val{font-family:Consolas,monospace;font-size:14px;margin-top:-50px;margin-bottom:20px}
+  .gauge .val{font-family:Consolas,monospace;font-size:14px;margin-top:-48px;margin-bottom:18px}
   .gauge label{font-size:9px;color:var(--muted);letter-spacing:2px;font-family:Consolas,monospace}
-  .battery-line{margin-top:10px;font-family:Consolas,monospace;font-size:11px;color:var(--muted);text-align:center;letter-spacing:1px}
+  .battery-line{font-family:Consolas,monospace;font-size:11px;color:var(--muted);text-align:center;padding:6px 0 12px}
 
-  /* drive */
-  .drive-chip{float:right;font-family:Consolas,monospace;font-size:10px;color:var(--green);
-      border:1px solid rgba(58,240,124,.4);padding:3px 8px;border-radius:3px;margin-top:-2px}
-  .drive-bar{height:6px;background:rgba(25,230,242,.1);border-radius:3px;overflow:hidden;margin:4px 0 10px}
-  .drive-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--deep),var(--cyan));border-radius:3px}
-  .file{font-family:Consolas,monospace;font-size:11px;color:var(--soft);display:flex;justify-content:space-between;
-        gap:10px;padding:5px 2px;border-bottom:1px dashed var(--line-soft)}
-  .file:last-child{border-bottom:none}
-  .file .sz{color:var(--green);white-space:nowrap}
-  .file .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:rtl;text-align:left}
+  .mail{display:flex;gap:8px;padding:6px 14px;border-bottom:1px dashed var(--line-soft);
+        font-family:Consolas,monospace;font-size:11px}
+  .mail:last-child{border:none}
+  .mail .when{color:var(--muted)}
+  .mail .what{color:var(--soft);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-  /* roblox */
-  .rb-session{font-family:Consolas,monospace;font-size:11px;color:var(--green);margin-bottom:8px;letter-spacing:1px}
+  .file{font-family:Consolas,monospace;font-size:11px;display:flex;justify-content:space-between;gap:10px;
+        padding:6px 14px;border-bottom:1px dashed var(--line-soft)}
+  .file:last-child{border:none}
+  .file .nm{color:var(--soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:rtl;text-align:left}
+  .file .sz{color:var(--green)}
+  .drive-bar{height:6px;background:rgba(255,140,26,.12);border-radius:3px;overflow:hidden;margin:10px 14px}
+  .drive-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--deep),var(--orange))}
+  .drive-line{display:flex;justify-content:space-between;font-family:Consolas,monospace;font-size:10px;
+      color:var(--muted);padding:10px 14px 0}
+
+  .rb-session{font-family:Consolas,monospace;font-size:11px;color:var(--green);padding:10px 14px 0}
   .rb-session.idle{color:var(--muted)}
-  .goal{font-size:12px;padding:4px 0;font-family:Consolas,monospace;color:var(--soft)}
+  .goal{font-family:Consolas,monospace;font-size:12px;color:var(--soft);padding:4px 14px}
   .goal.x{color:var(--muted);text-decoration:line-through}
-  .rb-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
-  .rbstats{font-size:10px;color:var(--muted);font-family:Consolas,monospace;margin-top:8px;letter-spacing:1px}
+  .rb-row{display:flex;flex-wrap:wrap;gap:8px;padding:10px 14px}
+  .rb-row button{font-size:10px;padding:8px 11px}
+  .rbstats{font-family:Consolas,monospace;font-size:10px;color:var(--muted);padding:0 14px 12px}
 
-  .qa{display:flex;flex-wrap:wrap;gap:8px}
-  .qa button{font-size:10px;padding:8px 10px}
+  .qa{display:flex;flex-wrap:wrap;gap:8px;padding:12px 14px}
+  .qa button{font-size:10px;padding:9px 11px}
 
-  /* footer console */
-  footer{position:fixed;bottom:0;left:0;right:0;border-top:1px solid var(--line);
-     background:rgba(2,12,18,.94);backdrop-filter:blur(10px);padding:12px 22px;display:flex;gap:10px;z-index:20}
-  footer input[type=text]{flex:1;font-size:14px;padding:13px 16px}
-  @media(max-width:760px){#clock{font-size:13px}nav{flex-wrap:wrap}}
+  /* ---------- bottom console (photo style) ---------- */
+  footer{position:relative;z-index:5;display:flex;gap:12px;padding:12px 16px;
+      background:rgba(8,4,0,.82);backdrop-filter:blur(8px);border-top:1px solid rgba(255,140,26,.22)}
+  footer input{font-size:14.5px;padding:13px 16px;border-radius:8px}
+  footer button{border-radius:8px;font-size:12.5px;padding:12px 20px}
 </style>
 </head>
 <body>
 
+<canvas id="stars"></canvas>
+
 <nav>
-  <div class="logo">JARVIS DASHBOARD</div>
-  <span class="chip" id="chip-ai">AI …</span>
-  <span class="chip" id="chip-voice">VOICE</span>
-  <span class="chip on">CORE ACTIVE</span>
-  <span id="clock">--:--:--</span>
+  <div class="nav-item active" data-view="home" onclick="showView('home')"><span class="ico">✦</span>Home</div>
+  <div class="nav-item" data-view="chat" onclick="showView('chat')"><span class="ico">🗨</span>Chat</div>
+  <div class="nav-item" data-view="dash" onclick="showView('dash')"><span class="ico">▦</span>Dashboard</div>
+  <div id="top-status">AI GROQ · VOICE READY · <b>CORE ACTIVE</b></div>
 </nav>
 
-<div class="wrap">
-
-  <!-- ============ LEFT SIDEBAR ============ -->
-  <div class="side">
-
-    <div class="card">
-      <h3 class="box-label">CAMERA <em id="cam-state">OFFLINE</em></h3>
-      <video id="cam" autoplay muted playsinline style="display:none"></video>
-      <div class="cam-off" id="cam-off">FEED OFFLINE<br><br>press ENABLE to activate</div>
-      <div class="sysline"><span>SYSTEM CLICK <b id="sys-click">--</b></span><span>FACE-ID <b id="face-id">SCAN</b></span></div>
-      <div class="rb-row">
-        <button class="green" onclick="camEnable()">ENABLE</button>
-        <button class="btn-red" onclick="camDisable()">EXIT</button>
-      </div>
+<main>
+  <!-- ============ HOME ============ -->
+  <section class="view active" id="view-home">
+    <div class="hero">
+      <img id="orb" src="/hero_orb.png" alt="JARVIS core">
+      <div class="telemetry" id="telemetry">CPU --%&nbsp;&nbsp;MEM --%&nbsp;&nbsp;DSK --%&nbsp;&nbsp;PWR --</div>
+      <div class="core-chip">CORE ACTIVE</div>
     </div>
+  </section>
 
-    <div class="card">
-      <h3 class="box-label">AI BRAIN <em id="brain-note">neural link</em></h3>
-      <canvas id="brain" width="256" height="150"></canvas>
-      <div class="sysline"><span>NODES <b id="brain-nodes">0</b></span><span>LINKS <b id="brain-links">0</b></span><span>SYNC <b style="color:var(--green)">99.2%</b></span></div>
-    </div>
-
-    <div class="card">
-      <h3 class="box-label">STATUS</h3>
-      <div class="ready" id="ready-text">READY</div>
-      <div class="ready-sub" id="ready-sub">ALL SYSTEMS NOMINAL</div>
-      <div class="mini-btns">
-        <button onclick="quick('system status')">SYSTEM</button>
-        <button onclick="quick('what time is it')">TIME</button>
-        <button onclick="quick('weather')">WEATHER</button>
-        <button onclick="quick('news')">NEWS</button>
-        <button onclick="quick('take screenshot')">SCREENSHOT</button>
-        <button onclick="quick('tell me a joke')">JOKE</button>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- ============ MAIN COLUMN ============ -->
-  <div class="main">
-
-    <div class="row cols-3">
-      <div class="card">
-        <h3 class="box-label">ACTIVE GOOGLE TASKS <em id="task-count">0</em></h3>
-        <ul class="list" id="tasks"><li class="empty">No open tasks.</li></ul>
-        <div class="add-row">
-          <input type="text" id="task-in" placeholder="Add a new task… e.g. finish report">
-          <button class="green" onclick="addFromInput('task-in','add task:')">+ ADD</button>
-        </div>
-      </div>
-
-      <div class="card">
-        <h3 class="box-label">APPLE NOTES <em id="note-count">0</em></h3>
-        <ul class="list" id="notes"><li class="empty">No notes yet.</li></ul>
-        <div class="add-row">
-          <input type="text" id="note-in" placeholder="New note… e.g. buy batteries">
-          <button class="green" onclick="addFromInput('note-in','take note:')">+ NOTE</button>
-        </div>
-      </div>
-
-      <div class="card">
-        <h3 class="box-label">GMAIL INBOX MATRIX <em>comm log</em></h3>
-        <div id="inbox"><div class="empty">Connecting to comm log…</div></div>
-      </div>
-    </div>
-
-    <div class="card">
-      <h3 class="box-label">CHAT SECTION <em id="provider">offline persona</em></h3>
-      <div class="chat-head">
-        <canvas id="radar" width="74" height="74"></canvas>
-        <div style="flex:1;min-width:0">
-          <div id="chatlog"></div>
-        </div>
-      </div>
+  <!-- ============ CHAT ============ -->
+  <section class="view" id="view-chat">
+    <div class="panel" style="flex:1;display:flex;flex-direction:column;min-height:0">
+      <h3>CHAT SECTION <em id="provider">offline persona</em></h3>
+      <div id="chatlog"></div>
       <div class="chat-in">
-        <input type="text" id="chatin" placeholder="Type your message here… Press Enter to send" autocomplete="off">
-        <button class="green" onclick="sendChat()">SEND</button>
+        <input type="text" id="chatin" placeholder="Type command or press Speak..." autocomplete="off">
+        <button style="background:var(--orange);color:#1A0D00;border-color:var(--orange)" onclick="sendChat()">SEND</button>
         <button onclick="voiceInput()">🎙 SPEAK</button>
       </div>
     </div>
+  </section>
 
-    <div class="row cols-2">
-      <div class="card">
-        <h3 class="box-label">DRIVE STORAGE MATRIX <span class="drive-chip" id="drive-total">—</span></h3>
-        <div class="sysline"><span>PRIMARY DISK</span><span id="drive-pct" style="color:var(--cyan)">—</span></div>
-        <div class="drive-bar"><i id="drive-fill" style="width:0%"></i></div>
-        <div id="drive-files"><div class="empty">Scanning local storage…</div></div>
-      </div>
+  <!-- ============ DASHBOARD ============ -->
+  <section class="view" id="view-dash">
+    <div class="dash-grid">
 
-      <div class="card">
-        <h3 class="box-label">SYSTEM TELEMETRY <em>live</em></h3>
+      <div class="panel">
+        <h3>SYSTEM TELEMETRY <em>live</em></h3>
         <div class="gauges">
           <div class="gauge" id="g-cpu"></div>
           <div class="gauge" id="g-mem"></div>
@@ -260,11 +174,44 @@
         </div>
         <div class="battery-line" id="battery">POWER —</div>
       </div>
-    </div>
 
-    <div class="row cols-3">
-      <div class="card">
-        <h3 class="box-label">ROBLOX · SAFE MODE <em>no cheats, ever</em></h3>
+      <div class="panel wide">
+        <h3>GMAIL INBOX MATRIX <em>comm log</em></h3>
+        <div id="inbox"><div class="empty">No traffic yet. Commands stream here.</div></div>
+      </div>
+
+      <div class="panel">
+        <h3>ACTIVE GOOGLE TASKS <em id="task-count">0</em></h3>
+        <ul class="list" id="tasks"></ul>
+        <div class="add-row">
+          <input type="text" id="task-in" placeholder="Add a new task…">
+          <button onclick="addFromInput('task-in','add task:')">+ ADD</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>APPLE NOTES <em id="note-count">0</em></h3>
+        <ul class="list" id="notes"></ul>
+        <div class="add-row">
+          <input type="text" id="note-in" placeholder="New note…">
+          <button onclick="addFromInput('note-in','take note:')">+ NOTE</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>MEMORY CORE <em>sqlite</em></h3>
+        <ul class="list" id="facts"></ul>
+      </div>
+
+      <div class="panel">
+        <h3>DRIVE STORAGE MATRIX <em id="drive-total">—</em></h3>
+        <div class="drive-line"><span>PRIMARY DISK</span><span id="drive-pct">—</span></div>
+        <div class="drive-bar"><i id="drive-fill" style="width:0%"></i></div>
+        <div id="drive-files"><div class="empty">Scanning…</div></div>
+      </div>
+
+      <div class="panel">
+        <h3>ROBLOX · SAFE MODE <em>no cheats, ever</em></h3>
         <div class="rb-session idle" id="rb-session">NO ACTIVE SESSION</div>
         <div id="rb-goals"><div class="empty">No goals set.</div></div>
         <div class="rb-row">
@@ -276,129 +223,79 @@
         <div class="rbstats" id="rb-stats"></div>
       </div>
 
-      <div class="card">
-        <h3 class="box-label">MEMORY CORE <em>sqlite</em></h3>
-        <ul class="list" id="facts"><li class="empty">No memories stored yet.</li></ul>
-      </div>
-
-      <div class="card">
-        <h3 class="box-label">QUICK ACTIONS <em>voice out</em></h3>
-        <div class="qa" style="margin-bottom:12px">
-          <button onclick="quick('what can you do')">CAPABILITIES</button>
+      <div class="panel">
+        <h3>QUICK ACTIONS <em>voice out</em></h3>
+        <div class="qa">
+          <button onclick="quick('system status')">SYSTEM</button>
+          <button onclick="quick('what time is it')">TIME</button>
+          <button onclick="quick('tell me a joke')">JOKE</button>
+          <button onclick="quick('take screenshot')">SCREENSHOT</button>
           <button onclick="quick('open youtube')">YOUTUBE</button>
           <button onclick="quick('volume 40')">VOL 40</button>
           <button onclick="quick('play music')">MUSIC</button>
-          <button onclick="quick('what do you remember')">RECALL</button>
+          <button onclick="quick('weather')">WEATHER</button>
+          <button onclick="quick('what can you do')">CAPABILITIES</button>
         </div>
-        <div style="font-size:11px;color:var(--muted);font-family:Consolas,monospace;margin-bottom:8px">
-          REPLIES SPOKEN BY BROWSER · DEEP SYNTHETIC PROFILE</div>
-        <button id="tts-toggle" class="green" onclick="toggleTTS()">TTS: ON</button>
-        <button onclick="speakText('All systems operational, sir. No need to worry.')">TEST VOICE</button>
+        <div class="qa" style="padding-top:0">
+          <button id="tts-toggle" style="background:var(--orange);color:#1A0D00;border-color:var(--orange)" onclick="toggleTTS()">TTS: ON</button>
+          <button onclick="speakText('All systems operational, sir. No need to worry.')">TEST VOICE</button>
+        </div>
       </div>
-    </div>
 
-  </div>
-</div>
+    </div>
+  </section>
+</main>
 
 <footer>
-  <input type="text" id="console-in" placeholder='Type command or press Speak…  ·  e.g. "open chrome then volume 40"' autocomplete="off">
-  <button class="green" onclick="sendConsole()">SEND</button>
+  <input type="text" id="console-in" placeholder="Type command or press Speak..." autocomplete="off">
+  <button style="background:var(--orange);color:#1A0D00;border-color:var(--orange)" onclick="sendConsole()">SEND</button>
   <button onclick="voiceInput()">SPEAK</button>
   <button onclick="quick('roblox stats')">ROBLOX</button>
   <button onclick="quick('start 30 minute roblox grind session for daily quests')">GRIND</button>
 </footer>
 
 <script>
-/* ================= state ================= */
+/* ============ twinkling sparkle starfield (photo effect) ============ */
+const sc = document.getElementById("stars"), sx = sc.getContext("2d");
+let stars = [];
+function initStars(){
+  sc.width = innerWidth; sc.height = innerHeight;
+  stars = Array.from({length:110},()=>({
+    x:Math.random()*sc.width, y:Math.random()*sc.height,
+    s:.6+Math.random()*1.7, ph:Math.random()*Math.PI*2,
+    sp:.4+Math.random()*1.2, cross:Math.random()<.45
+  }));
+}
+function drawStars(t){
+  sx.clearRect(0,0,sc.width,sc.height);
+  stars.forEach(st=>{
+    const tw=.25+.75*Math.abs(Math.sin(t/900*st.sp+st.ph));
+    sx.globalAlpha=tw*.9;
+    sx.fillStyle=tw>.75?"#FFE9C9":"#FF9C3A";
+    if(st.cross){
+      const l=st.s*3.2;
+      sx.save();sx.translate(st.x,st.y);
+      sx.fillRect(-l,-st.s/2,l*2,st.s);sx.fillRect(-st.s/2,-l,st.s,l*2);
+      sx.restore();
+    }else{
+      sx.beginPath();sx.arc(st.x,st.y,st.s,0,7);sx.fill();
+    }
+  });
+  sx.globalAlpha=1;
+  requestAnimationFrame(drawStars);
+}
+initStars(); addEventListener("resize",initStars); requestAnimationFrame(drawStars);
+
+/* ============ views ============ */
+function showView(v){
+  document.querySelectorAll(".view").forEach(el=>el.classList.remove("active"));
+  document.getElementById("view-"+v).classList.add("active");
+  document.querySelectorAll(".nav-item").forEach(n=>n.classList.toggle("active",n.dataset.view===v));
+}
+
+/* ============ API ============ */
 let TTS_ON = true;
 const $ = id => document.getElementById(id);
-
-/* ================= camera ================= */
-let camStream = null;
-async function camEnable(){
-  try{
-    camStream = await navigator.mediaDevices.getUserMedia({video:true});
-    $("cam").srcObject = camStream;
-    $("cam").style.display = "block";
-    $("cam-off").style.display = "none";
-    $("cam-state").textContent = "LIVE";
-    $("cam-state").style.color = "var(--green)";
-    $("face-id").textContent = "LOCK";
-    $("sys-click").textContent = "01";
-  }catch(e){
-    $("cam-off").innerHTML = "FEED DENIED<br><br>permission blocked by browser";
-    $("cam-state").textContent = "DENIED";
-  }
-}
-function camDisable(){
-  if(camStream){ camStream.getTracks().forEach(t=>t.stop()); camStream=null; }
-  $("cam").style.display = "none";
-  $("cam-off").style.display = "flex";
-  $("cam-off").innerHTML = "FEED OFFLINE<br><br>press ENABLE to activate";
-  $("cam-state").textContent = "OFFLINE"; $("cam-state").style.color = "";
-  $("face-id").textContent = "SCAN"; $("sys-click").textContent = "--";
-}
-
-/* ================= ai brain ================= */
-const brainCv=$("brain"), bx=brainCv.getContext("2d");
-const NODE_COUNT=26;
-const nodes=Array.from({length:NODE_COUNT},()=>({
-  x:Math.random(), y:Math.random(),
-  vx:(Math.random()-.5)*.003, vy:(Math.random()-.5)*.003,
-  r:1.2+Math.random()*1.8, pulse:Math.random()*Math.PI*2
-}));
-$("brain-nodes").textContent=NODE_COUNT;
-let linkCount=0;
-(function brainLoop(t){
-  bx.clearRect(0,0,256,150);
-  nodes.forEach(n=>{
-    n.x+=n.vx; n.y+=n.vy;
-    if(n.x<0||n.x>1)n.vx*=-1; if(n.y<0||n.y>1)n.vy*=-1;
-  });
-  linkCount=0;
-  for(let i=0;i<nodes.length;i++)for(let j=i+1;j<nodes.length;j++){
-    const a=nodes[i],b=nodes[j];
-    const dx=(a.x-b.x)*256, dy=(a.y-b.y)*150, d=Math.hypot(dx,dy);
-    if(d<62){
-      linkCount++;
-      bx.beginPath();bx.strokeStyle=`rgba(25,230,242,${.5*(1-d/62)})`;bx.lineWidth=.7;
-      bx.moveTo(a.x*256,a.y*150);bx.lineTo(b.x*256,b.y*150);bx.stroke();
-    }
-  }
-  nodes.forEach(n=>{
-    const glow=.55+.45*Math.sin(t/500+n.pulse);
-    bx.beginPath();bx.fillStyle=`rgba(127,243,255,${glow})`;
-    bx.arc(n.x*256,n.y*150,n.r,0,7);bx.fill();
-  });
-  $("brain-links").textContent=linkCount;
-  requestAnimationFrame(brainLoop);
-})(0);
-
-/* ================= radar ================= */
-const radarCv=$("radar"), rx=radarCv.getContext("2d");
-(function radarLoop(t){
-  const c=37;
-  rx.clearRect(0,0,74,74);
-  rx.strokeStyle="rgba(25,230,242,.4)";rx.lineWidth=1;
-  [12,24,35].forEach(r=>{rx.beginPath();rx.arc(c,c,r,0,7);rx.stroke();});
-  rx.beginPath();rx.moveTo(c,2);rx.lineTo(c,72);rx.moveTo(2,c);rx.lineTo(72,c);
-  rx.strokeStyle="rgba(25,230,242,.18)";rx.stroke();
-  const ang=(t/700)%(Math.PI*2);
-  const grad=rx.createConicGradient ? rx.createConicGradient(ang,c,c) : null;
-  if(grad){grad.addColorStop(0,"rgba(25,230,242,.55)");grad.addColorStop(.12,"rgba(25,230,242,0)");grad.addColorStop(1,"rgba(25,230,242,0)");
-    rx.beginPath();rx.fillStyle=grad;rx.moveTo(c,c);rx.arc(c,c,35,ang,ang+2);rx.fill();}
-  else{rx.beginPath();rx.strokeStyle="rgba(25,230,242,.8)";
-    rx.moveTo(c,c);rx.lineTo(c+35*Math.cos(ang),c+35*Math.sin(ang));rx.stroke();}
-  for(let i=0;i<4;i++){
-    const blipAng=(t/2600+i*1.7)%(Math.PI*2), r=10+((i*9)%24);
-    const bp=.5+.5*Math.sin(t/300+i*2);
-    rx.beginPath();rx.fillStyle=`rgba(58,240,124,${bp})`;
-    rx.arc(c+r*Math.cos(blipAng),c+r*Math.sin(blipAng),1.8,0,7);rx.fill();
-  }
-  requestAnimationFrame(radarLoop);
-})(0);
-
-/* ================= API ================= */
 async function api(path, body){
   const opt = body ? {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)} : {};
   const res = await fetch(path, opt);
@@ -410,7 +307,7 @@ function addChat(cls, who, text){
   p.appendChild(b); p.appendChild(document.createTextNode(text));
   log.appendChild(p); log.scrollTop=log.scrollHeight;
 }
-addChat("s","SYSTEM","Neural link established. All modules online, sir.");
+addChat("s","SYSTEM","Systems online, sir. All modules operational.");
 
 async function runCommand(cmd){
   addChat("u","YOU:",cmd);
@@ -422,17 +319,16 @@ async function runCommand(cmd){
     if(TTS_ON && r.text) speakText(r.text);
   }catch(e){ $("chatlog").lastChild.remove(); addChat("s","SYSTEM","Connection error."); }
 }
-function sendChat(){ const c=$("chatin").value.trim(); if(!c)return; $("chatin").value=""; runCommand(c); }
-function quick(cmd){ runCommand(cmd); }
-function sendConsole(){ const i=$("console-in"),c=i.value.trim(); if(!c)return; i.value="";
-  document.querySelector(".chat-head").scrollIntoView({behavior:"smooth"}); runCommand(c); }
+function sendChat(){ const c=$("chatin").value.trim(); if(!c)return; $("chatin").value=""; showView("chat"); runCommand(c); }
+function quick(cmd){ showView("chat"); runCommand(cmd); }
+function sendConsole(){ const i=$("console-in"),c=i.value.trim(); if(!c)return; i.value=""; showView("chat"); runCommand(c); }
 function addFromInput(inputId,prefix){ const i=$(inputId),v=i.value.trim(); if(!v)return; i.value=""; runCommand(prefix+" "+v); }
 $("chatin").addEventListener("keydown",e=>{if(e.key==="Enter")sendChat()});
 $("console-in").addEventListener("keydown",e=>{if(e.key==="Enter")sendConsole()});
 $("task-in").addEventListener("keydown",e=>{if(e.key==="Enter")addFromInput("task-in","add task:")});
 $("note-in").addEventListener("keydown",e=>{if(e.key==="Enter")addFromInput("note-in","take note:")});
 
-/* ================= voice ================= */
+/* ============ voice ============ */
 function speakText(text){
   try{
     speechSynthesis.cancel();
@@ -441,78 +337,69 @@ function speakText(text){
     const pref=vs.find(v=>/en-gb/i.test(v.lang)&&/male|david|george|guy/i.test(v.name))||
                vs.find(v=>/en-gb/i.test(v.lang))||vs.find(v=>/^en/i.test(v.lang));
     if(pref) u.voice=pref;
-    u.rate=.92; u.pitch=.55; u.volume=1;   // dark synthetic profile
+    u.rate=.92; u.pitch=.55; u.volume=1;
     speechSynthesis.speak(u);
   }catch(e){}
 }
 function toggleTTS(){ TTS_ON=!TTS_ON;
   const b=$("tts-toggle"); b.textContent="TTS: "+(TTS_ON?"ON":"OFF");
-  b.classList.toggle("green",TTS_ON); if(!TTS_ON) try{speechSynthesis.cancel()}catch(e){} }
+  if(!TTS_ON) try{speechSynthesis.cancel()}catch(e){} }
 function voiceInput(){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!SR){ addChat("s","SYSTEM","Speech recognition not supported in this browser — type instead, sir."); return; }
+  if(!SR){ addChat("s","SYSTEM","Speech recognition not supported here — type instead, sir."); return; }
   try{
     const rec=new SR(); rec.lang="en-US"; rec.interimResults=false;
     addChat("s","SYSTEM","Listening…");
-    rec.onresult=e=>{ const t=e.results[0][0].transcript; runCommand(t); };
+    rec.onresult=e=>{ runCommand(e.results[0][0].transcript); };
     rec.onerror=()=>addChat("s","SYSTEM","Microphone unavailable or permission denied.");
     rec.start();
   }catch(e){ addChat("s","SYSTEM","Could not start microphone."); }
 }
 
-/* ================= gauges ================= */
+/* ============ gauges ============ */
 function gauge(id,label,pct){
-  const el=$(id), r=34, circ=2*Math.PI*r, col=pct==null?"#6E93A8":pct<60?"#3AF07C":pct<85?"#19E6F2":"#FF4D5E";
+  const el=$(id), r=34, circ=2*Math.PI*r;
+  const col=pct==null?"#9A8F7F":pct<60?"#38E07C":pct<85?"#FF8C1A":"#FF5555";
   const v=pct==null?"N/A":Math.round(pct)+"%";
-  el.innerHTML=`<svg width="92" height="92">
-    <circle cx="46" cy="46" r="${r}" stroke="rgba(25,230,242,.14)" stroke-width="7" fill="none"/>
-    <circle cx="46" cy="46" r="${r}" stroke="${col}" stroke-width="7" fill="none"
+  el.innerHTML=`<svg width="90" height="90">
+    <circle cx="45" cy="45" r="${r}" stroke="rgba(255,140,26,.15)" stroke-width="7" fill="none"/>
+    <circle cx="45" cy="45" r="${r}" stroke="${col}" stroke-width="7" fill="none"
       stroke-linecap="round" stroke-dasharray="${circ}" stroke-dashoffset="${circ*(1-(pct||0)/100)}"
       style="transition:stroke-dashoffset .8s,stroke .4s;filter:drop-shadow(0 0 4px ${col})"/></svg>
     <div class="val" style="color:${col}">${v}</div><label>${label}</label>`;
 }
 function esc(s){const d=document.createElement("div");d.textContent=s;return d.innerHTML}
 
-/* ================= polling ================= */
+/* ============ polling ============ */
 function fmt(n){return n==null?"—":Math.round(n).toString()}
 async function refresh(){
   try{
     const s=await api("/api/state");
-    $("clock").textContent=s.time;
+    $("telemetry").innerHTML=
+      `CPU ${fmt(s.system.cpu)}%&nbsp;&nbsp;MEM ${fmt(s.system.mem)}%&nbsp;&nbsp;DSK ${fmt(s.system.disk)}%&nbsp;&nbsp;PWR ${s.system.battery!=null?fmt(s.system.battery)+"%":"AC"}`;
     gauge("g-cpu","CPU",s.system.cpu); gauge("g-mem","MEMORY",s.system.mem); gauge("g-dsk","DISK",s.system.disk);
     $("battery").textContent="POWER "+(s.system.battery!=null?Math.round(s.system.battery)+"% BATTERY":"AC / DESKTOP");
-    const ai=$("chip-ai");
-    if(s.ai.groq_ready){ai.textContent="AI GROQ";ai.className="chip on";$("provider").textContent="groq · "+s.ai.model}
-    else{ai.textContent="AI OFFLINE";ai.className="chip warn";$("provider").textContent="offline persona"}
-    const vc=$("chip-voice"); vc.textContent=s.voice.available?"VOICE READY":"VOICE N/A";
-    vc.className="chip"+(s.voice.available?" on":" warn");
-    $("ready-sub").textContent = s.ai.groq_ready?"GROQ LINK ESTABLISHED":"OFFLINE PERSONA · ADD GROQ KEY";
+    const st=$("top-status");
+    st.innerHTML=(s.ai.groq_ready?"AI GROQ":"AI OFFLINE")+" · "+(s.voice.available?"VOICE READY":"VOICE N/A")+" · <b>CORE ACTIVE</b>";
+    $("provider").textContent=s.ai.groq_ready?("groq · "+s.ai.model):"offline persona";
     $("task-count").textContent=s.productivity.tasks.length;
     $("note-count").textContent=s.productivity.notes.length;
-
     const L=(id,items,empty)=>{ $(id).innerHTML=items.length?items:`<li class="empty">${empty}</li>`; };
-    L("tasks", s.productivity.tasks.map(t=>`<li><span class="dot">[ ]</span>${esc(t.text)}</li>`).join(""),"No open tasks. Add one below ↓");
-    L("notes", s.productivity.notes.map(n=>`<li><span class="dot">✦</span>${esc(n.text)}</li>`).join(""),"No notes yet. Add one below ↓");
-    L("facts", s.memory.facts.map(f=>`<li><span class="dot">◆</span><b style="color:var(--cyan);font-weight:400">${esc(f.key.replace(/_/g," "))}</b>&nbsp;— ${esc(f.value)}</li>`).join(""),"No memories yet. Try: remember favorite color is blue");
-
-    // inbox matrix = live comm log
+    L("tasks", s.productivity.tasks.map(t=>`<li><span class="dot">[ ]</span>${esc(t.text)}</li>`).join(""),"No open tasks. Add one ↓");
+    L("notes", s.productivity.notes.map(n=>`<li><span class="dot">✦</span>${esc(n.text)}</li>`).join(""),"No notes yet. Add one ↓");
+    L("facts", s.memory.facts.map(f=>`<li><span class="dot">◆</span><b style="color:var(--orange);font-weight:400">${esc(f.key.replace(/_/g," "))}</b>&nbsp;— ${esc(f.value)}</li>`).join(""),"No memories yet. Try: remember favorite color is blue");
     if(s.conversations && s.conversations.length){
       $("inbox").innerHTML=s.conversations.slice().reverse().map(c=>
         `<div class="mail"><span class="when">${esc(c.time)}</span><span class="what" title="${esc(c.response)}">${esc(c.command)}</span><span class="when">▶</span></div>`).join("");
-    } else { $("inbox").innerHTML=`<div class="empty">No traffic yet. Commands will stream here like an inbox.</div>`; }
-
-    // drive matrix
+    }
     if(s.drive){
       const pct=s.drive.disk_percent;
       $("drive-pct").textContent=pct!=null?Math.round(pct)+"% USED":"—";
       if(pct!=null)$("drive-fill").style.width=pct+"%";
       $("drive-total").textContent=(s.drive.files||[]).length+" FILES";
       $("drive-files").innerHTML=(s.drive.files||[]).map(f=>
-        `<div class="file"><span class="nm" title="${esc(f.name)}">${esc(f.name)}</span><span class="sz">${esc(f.size)}</span></div>`).join("")
-        || `<div class="empty">No runtime files yet.</div>`;
+        `<div class="file"><span class="nm" title="${esc(f.name)}">${esc(f.name)}</span><span class="sz">${esc(f.size)}</span></div>`).join("") || `<div class="empty">No runtime files yet.</div>`;
     }
-
-    // roblox
     const rb=s.roblox, sess=$("rb-session");
     if(rb.session){ sess.className="rb-session";
       sess.textContent=`SESSION ACTIVE · ${rb.session.remaining} MIN LEFT · ${rb.session.focus||"free grind"}`; }
@@ -521,10 +408,7 @@ async function refresh(){
       rb.goals.map(g=>`<div class="goal ${g.done?"x":""}">${g.done?"[x]":"[ ]"} ${esc(g.text)}</div>`).join(""):
       `<div class="empty">No goals. Try: set roblox goal: reach level 50</div>`;
     $("rb-stats").textContent=`${rb.sessions_logged} SESSIONS · ${rb.total_minutes} LIFETIME MINUTES`;
-  }catch(e){
-    $("chip-ai").textContent="SERVER?"; $("chip-ai").className="chip warn";
-    $("ready-text").textContent="LINK…"; $("ready-text").style.color="var(--red)";
-  }
+  }catch(e){ $("top-status").innerHTML="<span style='color:var(--red)'>SERVER UNREACHABLE</span>"; }
 }
 refresh(); setInterval(refresh,2000);
 try{ speechSynthesis.getVoices(); }catch(e){}

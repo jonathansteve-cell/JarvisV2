@@ -1,12 +1,12 @@
 # UI Guide — Solar Core HUD + Web Dashboard
 
-Jarvis V2 ships **two interfaces**, both in the same black-and-orange Solar style:
+Jarvis V2 ships **two interfaces**, both in the same black-and-cyan Arc style:
 
-1. **Solar Core HUD** (`gui/main_window.py`) — native Tkinter desktop app (default)
+1. **Arc Core HUD** (`gui/main_window.py`) — native Tkinter desktop app (default)
 2. **Solar Web Dashboard** (`dashboard/`) — Spark-style browser dashboard via
    `python main.py --web` → `http://localhost:8765`
 
-![UI mockup](images/jarvis_v2_solar_core_ui_mockup.png)
+![UI mockup](images/jarvis_v2_arc_core_ui_mockup.png)
 
 ## Solar Web Dashboard (Spark-style)
 
@@ -42,7 +42,7 @@ dark and minimal so the core reads as the engine of the assistant.
 | --- | --- |
 | Top bar | `J.A.R.V.I.S V2` title, navigation (`HOME / AI / DASHBOARD`), live status (`AI GROQ · VOICE READY · CORE ACTIVE`) |
 | HOME view | The animated solar core (particle orbits, radial beams, pulsing glow) plus a live telemetry line: `CPU MEM DSK PWR` |
-| AI view | Chat transcript with the assistant (user messages amber, JARVIS messages orange, system notes muted) |
+| AI view | Chat transcript with the assistant (user messages soft cyan, JARVIS messages bright cyan, system notes muted) |
 | DASHBOARD view | Telemetry bars with color thresholds, quick-action buttons, and the Roblox safe-mode panel |
 | Bottom console | Slim command bar with placeholder `Type command or press Speak...` and buttons `SEND / SPEAK / ROBLOX / GRIND` |
 

@@ -5,7 +5,7 @@
 ### All-in-One Desktop AI Assistant · Solar Core HUD
 
 **Voice-first assistant with Groq AI, persistent memory, full desktop control,
-and a cinematic black-and-orange holographic interface.**
+and a cinematic black-and-cyan holographic interface.**
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-FF8C1A?style=flat-square&logo=python&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-FF8C1A?style=flat-square)
@@ -13,7 +13,7 @@ and a cinematic black-and-orange holographic interface.**
 ![AI](https://img.shields.io/badge/AI-Groq-38E07C?style=flat-square&logo=data:image/svg+xml;base64,PHN2Zy8+)
 ![UI](https://img.shields.io/badge/UI-Solar%20Core%20HUD-B4530A?style=flat-square)
 
-![J.A.R.V.I.S V2 Solar Core UI](docs/images/jarvis_v2_solar_core_ui_mockup.png)
+![J.A.R.V.I.S V2 Arc Core Dashboard](docs/images/jarvis_v2_arc_core_ui_mockup.png)
 
 *The Solar Core HUD — animated particle orbits, radial scan beams, live telemetry,
 and the command console with SEND / SPEAK / ROBLOX / GRIND.*

@@ -75,6 +75,25 @@ class DashboardState:
         tasks = [task for task in self.productivity.data.get("tasks", []) if not task.get("done")][-6:]
         notes = self.productivity.data.get("notes", [])[-4:]
 
+        # Drive storage matrix: real files from local runtime folders.
+        from utils.helpers import human_bytes
+
+        drive_files: list[dict[str, Any]] = []
+        seen: set[str] = set()
+        for path_key in ("paths.data_dir", "paths.log_dir", "paths.screenshot_dir"):
+            folder = Path(str(jarvis.config.get(path_key, "")))
+            if folder.exists():
+                for file_path in sorted(folder.rglob("*"), key=lambda p: p.stat().st_mtime if p.is_file() else 0, reverse=True):
+                    if file_path.is_file() and str(file_path) not in seen:
+                        seen.add(str(file_path))
+                        drive_files.append(
+                            {"name": str(file_path), "size": human_bytes(file_path.stat().st_size)}
+                        )
+                    if len(drive_files) >= 7:
+                        break
+            if len(drive_files) >= 7:
+                break
+
         return {
             "time": datetime.now().strftime("%H:%M:%S"),
             "assistant_name": jarvis.ai.assistant_name(),
@@ -98,6 +117,15 @@ class DashboardState:
                 "sessions_logged": len(roblox.data.get("sessions", [])),
                 "total_minutes": sum(int(s.get("minutes", 0)) for s in roblox.data.get("sessions", [])),
             },
+            "conversations": [
+                {
+                    "command": item["command"][:60],
+                    "response": item["response"][:80],
+                    "time": item["created_at"][11:16] if len(item["created_at"]) > 15 else item["created_at"],
+                }
+                for item in jarvis.memory.recent_conversations(6)
+            ],
+            "drive": {"disk_percent": disk, "files": drive_files},
         }
 
 

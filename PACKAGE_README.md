@@ -2,7 +2,7 @@
 
 Welcome, sir. This package contains the complete Jarvis V2 desktop assistant:
 
-- **Solar Core HUD** — black + orange holographic UI with particle orbits and scan beams
+- **Solar Core HUD** — black + cyan holographic UI with particle orbits and scan beams
 - **Voice in / voice out** — wake words, speech recognition, and configurable voices
   (`dark_synthetic` heavy synthetic persona by default — an original persona, not a
   clone of any film character)

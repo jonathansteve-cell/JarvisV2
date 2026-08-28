@@ -117,6 +117,8 @@ class Jarvis:
         normalized = normalize_command(command)
         if not normalized:
             return JarvisResponse(text="I did not hear a command, sir.", success=False, intent="empty")
+        if normalized in {"jarvis", "hey jarvis", "jervis", "jrvis"}:
+            return JarvisResponse(text=f"At your service, sir. How may I assist?", success=True, intent="greeting")
 
         # Routines first.
         routine = self.automation.process_routine(command, lambda item: self.process_command(item, speak=False))
@@ -144,8 +146,21 @@ class Jarvis:
     def process_command(self, command: str, speak: bool | None = None) -> JarvisResponse:
         """Process a command and optionally speak the final response."""
         raw_command = command or ""
+        raw_norm = normalize_command(raw_command).strip()
         command = self.clean_command(raw_command)
         normalized = normalize_command(command)
+
+        # Speaking just the wake word is a greeting, not an empty command.
+        if raw_norm in {"jarvis", "hey jarvis", "jervis", "jrvis"}:
+            result = JarvisResponse(text="At your service, sir. How may I assist?", success=True, intent="greeting")
+            self.memory.log_interaction(raw_norm, result.intent, result.success)
+            self.memory.save_conversation(raw_norm, result.text)
+            if speak is None:
+                speak = bool(self.config.get("behavior.speak_responses", True))
+            if speak:
+                self.tts.speak(result.text, blocking=False)
+                result.spoken = True
+            return result
 
         # Explicit command chains, e.g. "open chrome then volume 40".
         chain_parts = self.automation.split_chain(command)

@@ -150,6 +150,7 @@
   <div class="nav-item active" data-view="home" onclick="showView('home')"><span class="ico">✦</span>Home</div>
   <div class="nav-item" data-view="chat" onclick="showView('chat')"><span class="ico">🗨</span>Chat</div>
   <div class="nav-item" data-view="dash" onclick="showView('dash')"><span class="ico">▦</span>Dashboard</div>
+  <span class="nav-item" id="mic-chip" style="color:var(--green);font-family:Consolas,monospace;font-size:11.5px" onclick="toggleMic()">🎙 MIC: starting…</span>
   <span id="telemetry-tag">TELEMETRY ▾</span>
 </nav>
 
@@ -432,69 +433,139 @@ function frame(){
 requestAnimationFrame(frame);
 })();
 
-/* ================= face scan (true 3D wireframe head) ================= */
+/* ================= face scan (realistic shaded 3D head) ================= */
 (function(){
 const cv=$("facescan"),g=cv.getContext("2d");
-const W=196,H=216,CX=W/2,CY=H/2,SC=46,F=3.2;
+const W=196,H=216,CX=W/2,CY=H/2,SC=52,F=3.2;
+const NV=18,NU=40;
+
 function headPos(u,v){
-  /* parametric head: superellipse profile, blunt jaw, nose bump */
-  const y=v*0.96;
-  const prof=Math.pow(Math.max(0,1-Math.pow(Math.abs(v),2.2)),1/2.6);
+  /* anatomically-inspired parametric head, +z is the face */
+  const y=v*0.98;
+  const absv=Math.abs(v);
+  const prof=Math.pow(Math.max(0,1-Math.pow(absv,2.35)),1/2.15);
   let x=Math.sin(u)*prof, z=Math.cos(u)*prof;
-  if(y<-0.25){const tt=(-y-0.25)/0.75; x*=(1-0.42*Math.pow(tt,1.7)); z*=(1-0.30*Math.pow(tt,1.7));}
-  const nose=Math.exp(-(u*u)/0.020)*Math.exp(-((y+0.05)*(y+0.05))/0.010);
-  if(z>0) z+=nose*0.15;
+  if(z>0) z*=0.90;                       /* flatter face plane */
+  if(z<0) z*=1.05;                       /* longer skull back */
+  if(v<-0.22){                           /* jaw -> chin taper */
+    const tt=(-v-0.22)/0.78;
+    const kx=1-0.50*Math.pow(tt,1.6), kz=1-0.34*Math.pow(tt,1.6);
+    x*=kx; z*=Math.max(kz,0.42);
+  }
+  if(v>0.55) x*=0.93;                    /* crown */
+  /* nose: ridge + tip */
+  const nose=Math.exp(-Math.pow(u/0.42,2))*(Math.exp(-Math.pow((y+0.12)/0.075,2))*0.10+Math.exp(-Math.pow((y+0.20)/0.030,2))*0.15);
+  if(z>0) z+=nose;
+  /* eye sockets: slight inward curve */
+  const socket=Math.exp(-Math.pow((Math.abs(u)-0.55)/0.30,2))*Math.exp(-Math.pow((y-0.14)/0.065,2));
+  if(z>0) z-=socket*0.055;
+  /* brow ridge */
+  const brow=Math.exp(-Math.pow(u/0.62,2))*Math.exp(-Math.pow((y-0.24)/0.045,2));
+  if(z>0) z+=brow*0.045;
+  /* lips */
+  const lips=(Math.exp(-Math.pow((y+0.40)/0.035,2))+0.7*Math.exp(-Math.pow((y+0.48)/0.030,2)))*Math.exp(-Math.pow(u/0.40,2));
+  if(z>0) z+=lips*0.055;
+  /* chin */
+  const chin=Math.exp(-Math.pow(u/0.30,2))*Math.exp(-Math.pow((y+0.62)/0.055,2));
+  if(z>0) z+=chin*0.07;
+  /* cheekbones */
+  const cheek=Math.exp(-Math.pow((Math.abs(u)-0.85)/0.38,2))*Math.exp(-Math.pow((y-0.02)/0.10,2));
+  if(z>0) z+=cheek*0.035;
+  /* ears: side bumps */
+  const ear=Math.exp(-Math.pow((Math.abs(Math.abs(u)-Math.PI/2))/0.16,2))*Math.exp(-Math.pow((y-0.02)/0.10,2));
+  if(Math.abs(Math.sin(u))>0.55) x+=Math.sign(Math.sin(u))*ear*0.10;
   return [x,y,z];
 }
-const NV=14, NU=36;
+
 function draw(t){
   g.clearRect(0,0,W,H);
-  const yaw=0.18+0.30*Math.sin(t/2600), tilt=0.08;
-  const cy_=Math.cos(yaw),sy_=Math.sin(yaw),ct=Math.cos(tilt),st=Math.sin(tilt);
-  function P(p){
-    const x1=p[0]*cy_+p[2]*sy_, z1=-p[0]*sy_+p[2]*cy_;
+  const yaw=0.16+0.32*Math.sin(t/3000), tilt=0.07;
+  const cyw=Math.cos(yaw),syw=Math.sin(yaw),ct=Math.cos(tilt),st=Math.sin(tilt);
+  function proj(p){
+    const x1=p[0]*cyw+p[2]*syw, z1=-p[0]*syw+p[2]*cyw;
     const y2=p[1]*ct-z1*st, z2=p[1]*st+z1*ct;
     const s=F/(F+z2);
-    return [CX+x1*s*SC, CY-y2*s*SC*1.06, (z2+1)/2];
+    return [CX+x1*s*SC, CY-y2*s*SC, (z2+1)/2];
   }
-  /* grid */
-  const grid=[];
+  const P3=[],P2=[];
   for(let i=0;i<=NV;i++){
-    const v=i/NV*2-1, row=[];
-    for(let j=0;j<=NU;j++) row.push(P(headPos(j/NU*Math.PI*2,v*0.92)));
-    grid.push(row);
+    const v=i/NV*2-1,row3=[],row2=[];
+    for(let j=0;j<=NU;j++){const p3=headPos(j/NU*Math.PI*2,v);row3.push(p3);row2.push(proj(p3));}
+    P3.push(row3);P2.push(row2);
   }
-  function seg(a,b){
-    const dep=(a[2]+b[2])/2;
-    const alpha=dep>0.5?(0.14+0.75*(dep-0.5)*2):0.14*(dep/0.5+0.25);
-    g.strokeStyle=`rgba(25,230,242,${alpha.toFixed(3)})`;
-    g.lineWidth=dep>0.5?1.1:0.6;
-    g.beginPath();g.moveTo(a[0],a[1]);g.lineTo(b[0],b[1]);g.stroke();
+  const quads=[];
+  for(let i=0;i<NV;i++)for(let j=0;j<NU;j++){
+    const a=P3[i][j],b=P3[i][j+1],c=P3[i+1][j+1],e=P3[i+1][j];
+    const u1=[b[0]-a[0],b[1]-a[1],b[2]-a[2]],u2=[e[0]-a[0],e[1]-a[1],e[2]-a[2]];
+    let n=[u1[1]*u2[2]-u1[2]*u2[1],u1[2]*u2[0]-u1[0]*u2[2],u1[0]*u2[1]-u1[1]*u2[0]];
+    const ln=Math.hypot(n[0],n[1],n[2])||1;n=[n[0]/ln,n[1]/ln,n[2]/ln];
+    quads.push({p:P2[i][j],q:P2[i][j+1],r:P2[i+1][j+1],s:P2[i+1][j],dep:(P2[i][j][2]+P2[i][j+1][2]+P2[i+1][j+1][2]+P2[i+1][j][2])/4,n});
   }
-  for(let i=0;i<=NV;i++) for(let j=0;j<NU;j++) seg(grid[i][j],grid[i][j+1]);   /* latitude rings */
-  for(let j=0;j<=NU;j++) for(let i=0;i<NV;i++) seg(grid[i][j],grid[i+1][j]);   /* meridians */
-  /* glowing vertex points */
-  for(let i=0;i<=NV;i++) for(let j=0;j<=NU;j++){
-    const p=grid[i][j];
-    g.fillStyle=`rgba(127,243,255,${(0.10+0.80*p[2]).toFixed(3)})`;
-    g.beginPath();g.arc(p[0],p[1],0.5+1.1*p[2],0,7);g.fill();
+  quads.sort((A,B)=>B.dep-A.dep);
+  for(const q of quads){
+    const nx=q.n[0]*cyw+q.n[2]*syw, nz1=-q.n[0]*syw+q.n[2]*cyw;
+    const ny=q.n[1]*ct-nz1*st, nz=q.n[1]*st+nz1*ct;
+    const facing=Math.max(0,-nz);
+    const key=Math.max(0,0.35*facing+0.65*Math.max(0,nx*-0.55)+0.35*Math.max(0,ny));
+    const bright=Math.min(1,0.04+0.95*facing+0.55*key*facing);
+    const R=Math.round(4+42*bright), Gc=Math.round(24+150*bright), B=Math.round(38+180*bright);
+    g.fillStyle=`rgb(${R},${Gc},${B})`;
+    g.beginPath();g.moveTo(q.p[0],q.p[1]);g.lineTo(q.q[0],q.q[1]);g.lineTo(q.r[0],q.r[1]);g.lineTo(q.s[0],q.s[1]);g.closePath();g.fill();
+    if(facing>0.03){
+      g.strokeStyle=`rgba(80,220,240,${(0.05+0.22*bright).toFixed(3)})`;
+      g.lineWidth=0.45;g.stroke();
+    }
   }
-  /* eyes ON the 3D surface */
-  [-0.55,0.55].forEach(ue=>{
-    const ex=Math.sin(ue)*0.62, ey=0.16;
-    const pr=Math.pow(Math.max(0,1-Math.pow(Math.abs(ey/0.96),2.2)),1/2.6);
-    const ez=Math.sqrt(Math.max(0,pr*pr-ex*ex))+0.05;
-    const e=P([ex,ey,ez]);
-    const sc2=e[2];
-    g.strokeStyle=`rgba(127,243,255,${0.45+0.5*sc2})`;g.lineWidth=1;
-    g.beginPath();g.ellipse(e[0],e[1],6.5*sc2+2,3.1*sc2+1,0,0,7);g.stroke();
-    g.fillStyle=`rgba(127,243,255,${0.5+0.5*sc2})`;
-    g.beginPath();g.arc(e[0],e[1],1.6*sc2+0.6,0,7);g.fill();
+  /* face features drawn on the 3D surface */
+  function surf(u,y,off=0.04){
+    const p=headPos(u,y);
+    const pr=Math.hypot(p[0],p[2])||1;
+    return proj([p[0]*(1+off/pr*0),p[1],p[2]+off]);
+  }
+  /* brows */
+  g.strokeStyle="rgba(160,244,255,0.95)";g.lineWidth=1.5;
+  [-1,1].forEach(side=>{
+    g.beginPath();
+    for(let k=0;k<=8;k++){
+      const u=side*(0.28+k/8*0.42), y=0.235-Math.sin(k/8*Math.PI)*0.02;
+      const p=surf(u,y,0.06);
+      k?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]);
+    }
+    g.stroke();
   });
-  /* sweep band */
+  /* eyes: outline + iris + pupil */
+  [-1,1].forEach(side=>{
+    const c=surf(side*0.55,0.14,0.075);
+    g.strokeStyle="rgba(160,244,255,0.95)";g.lineWidth=1;
+    g.beginPath();g.ellipse(c[0],c[1],10,4.6,0,0,7);g.stroke();
+    g.fillStyle="rgba(127,243,255,0.95)";
+    g.beginPath();g.arc(c[0],c[1],3.6,0,7);g.fill();
+    g.fillStyle="rgba(3,20,28,0.98)";
+    g.beginPath();g.arc(c[0],c[1],1.7,0,7);g.fill();
+  });
+  /* nose line */
+  g.strokeStyle="rgba(25,230,242,0.6)";g.lineWidth=0.9;
+  g.beginPath();
+  for(let k=0;k<=6;k++){
+    const y=0.05-k/6*0.30;
+    const p=surf(0,y,0.10);
+    k?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]);
+  }
+  g.stroke();
+  /* mouth */
+  g.strokeStyle="rgba(160,244,255,0.95)";g.lineWidth=1.6;
+  g.beginPath();
+  for(let k=0;k<=10;k++){
+    const u=-0.50+k/10*1.00;
+    const y=-0.44+Math.sin(k/10*Math.PI)*0.015;
+    const p=surf(u,y,0.05);
+    k?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]);
+  }
+  g.stroke();
+  /* scan sweep */
   const sy=((t/26)%(H+40))-20;
-  g.fillStyle="rgba(127,243,255,0.07)";g.fillRect(0,sy-9,W,18);
-  g.fillStyle="rgba(127,243,255,0.5)";g.fillRect(0,sy,W,1.3);
+  g.fillStyle="rgba(127,243,255,0.06)";g.fillRect(0,sy-9,W,18);
+  g.fillStyle="rgba(127,243,255,0.45)";g.fillRect(0,sy,W,1.3);
   requestAnimationFrame(draw);
 }
 requestAnimationFrame(draw);
@@ -579,6 +650,74 @@ function draw(t){
 }
 requestAnimationFrame(draw);
 })();
+
+/* ================= always-on microphone ================= */
+let recog=null, micWanted=true, micActive=false, ttsSpeaking=false, micBuf="", micTimer=null;
+function micChip(state,text){
+  const el=$("mic-chip"); if(!el)return;
+  el.textContent="🎙 MIC: "+text;
+  el.style.color=state==="on"?"var(--green)":state==="off"?"var(--red)":"var(--muted)";
+}
+function initRecog(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR)return null;
+  const r=new SR();
+  r.lang="en-US"; r.continuous=true; r.interimResults=true;
+  r.onresult=e=>{
+    let finalText="";
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      if(e.results[i].isFinal) finalText+=e.results[i][0].transcript;
+    }
+    if(finalText.trim()){
+      micBuf=(micBuf+" "+finalText).trim();
+      clearTimeout(micTimer);
+      micTimer=setTimeout(()=>{
+        if(micBuf && !ttsSpeaking){ const cmd=micBuf; micBuf=""; runCommand(cmd); }
+      },900);
+    }
+  };
+  r.onend=()=>{ micActive=false;
+    if(micWanted && !ttsSpeaking){ setTimeout(()=>{ if(micWanted&&!ttsSpeaking){try{r.start();micActive=true;}catch(err){}} },300); }
+  };
+  r.onerror=e=>{
+    if(e.error==="not-allowed"||e.error==="service-not-allowed"){ micWanted=false; micChip("off","BLOCKED — click to retry"); }
+    else if(e.error==="no-speech"){ /* normal in continuous mode */ }
+  };
+  return r;
+}
+function startMic(){
+  if(!recog) recog=initRecog();
+  if(!recog){ micChip("off","unsupported — use Chrome"); return; }
+  micWanted=true;
+  try{ recog.start(); micActive=true; micChip("on","LISTENING"); }catch(e){}
+}
+function pauseMic(){ if(recog&&micActive){ try{recog.abort();}catch(e){} micActive=false; } }
+function toggleMic(){
+  if(micWanted){ micWanted=false; pauseMic(); micChip("off","OFF"); }
+  else startMic();
+}
+/* speakText pauses the mic to avoid hearing itself */
+const _origSpeak=speakText;
+speakText=function(text){
+  ttsSpeaking=true; pauseMic(); micChip("off","SPEAKING");
+  try{
+    speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(text);
+    const vs=speechSynthesis.getVoices();
+    const pref=vs.find(v=>/en-gb/i.test(v.lang)&&/male|david|george|guy/i.test(v.name))||
+               vs.find(v=>/en-gb/i.test(v.lang))||vs.find(v=>/^en/i.test(v.lang));
+    if(pref) u.voice=pref;
+    u.rate=.92; u.pitch=.55; u.volume=1;
+    u.onend=()=>{ ttsSpeaking=false;
+      if(micWanted){ setTimeout(()=>{ if(micWanted&&!ttsSpeaking){try{recog.start();micActive=true;micChip("on","LISTENING");}catch(e){}} },350); }
+      else micChip("off","OFF");
+    };
+    speechSynthesis.speak(u);
+  }catch(e){ ttsSpeaking=false; }
+};
+/* auto-start; browsers may need one click/permission accept */
+setTimeout(startMic,600);
+document.addEventListener("click",function once(){ if(micWanted&&!micActive&&recog&&!ttsSpeaking){try{recog.start();micActive=true;micChip("on","LISTENING");}catch(e){}} document.removeEventListener("click",once); });
 
 /* ================= polling ================= */
 function fmt(n){return n==null?"—":Math.round(n).toString()}

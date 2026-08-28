@@ -7,7 +7,9 @@
   "voice": {
     "wake_words": [
       "hey jarvis",
-      "jarvis"
+      "jarvis",
+      "jervis",
+      "jrvis"
     ],
     "continuous_listening": true,
     "tts_enabled": true,

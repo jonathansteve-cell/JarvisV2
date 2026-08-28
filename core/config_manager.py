@@ -19,7 +19,7 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "owner_name": "sir",
     },
     "voice": {
-        "wake_words": ["hey jarvis", "jarvis"],
+        "wake_words": ["hey jarvis", "jarvis", "jervis", "jrvis"],
         "language": "en-US",
         "continuous_listening": True,
         "phrase_time_limit": 7,

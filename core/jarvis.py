@@ -16,6 +16,7 @@ from modules.memory_controller import MemoryController
 from modules.phone_controller import PhoneController
 from modules.power_controller import PowerController
 from modules.productivity_controller import ProductivityController
+from modules.roblox_controller import RobloxController
 from modules.screenshot_manager import ScreenshotManager
 from modules.smart_home_controller import SmartHomeController
 from modules.socialmedia_controller import SocialMediaController
@@ -63,22 +64,24 @@ class Jarvis:
         self.ai = ResponseGenerator(self.config, memory=self.memory)
         self.tts = TextToSpeech(self.config)
         self.automation = AutomationController(self.config)
+        self.roblox = RobloxController(self.config)
 
         self.modules: list[tuple[str, Any, list[str]]] = [
             ("power", PowerController(self.config), ["wake", "turn on pc", "turn on computer"]),
-            ("memory", self.memory, ["remember", "forget", "memory", "my name is", "call me", "i prefer", "i like"]),
+            ("memory", self.memory, ["remember", "forget", "memory", "my name is", "call me", "i prefer", "i like", "your name is", "change your name"]),
             ("productivity", ProductivityController(self.config), ["remind", "note", "task", "timer"]),
             ("email", EmailController(self.config), ["email", "inbox"]),
             ("whatsapp", WhatsAppController(self.config), ["whatsapp"]),
             ("phone", PhoneController(self.config), ["call", "phone"]),
-            ("spotify", SpotifyController(self.config), ["spotify", "play song", "pause music", "next song", "now playing"]),
+            ("spotify", SpotifyController(self.config), ["spotify", "play song", "play music", "pause music", "next song", "now playing"]),
             ("calendar", CalendarController(self.config), ["calendar", "schedule", "meeting"]),
             ("zoom", ZoomController(self.config), ["zoom", "join meeting", "video", "mute"]),
             ("word", WordController(self.config), ["word", "document"]),
             ("social", SocialMediaController(self.config), ["tweet", "twitter", "linkedin"]),
             ("smart_home", SmartHomeController(self.config), ["light", "thermostat", "door", "smart home"]),
             ("screenshot", ScreenshotManager(self.config), ["screenshot", "screen shot", "capture screen"]),
-            ("system", SystemController(self.config), ["system", "cpu", "battery", "memory", "volume", "mute", "lock", "sleep", "shutdown", "restart"]),
+            ("system", SystemController(self.config), ["system", "cpu", "battery", "memory", "volume", "mute", "lock", "sleep", "shutdown", "restart", "joke"]),
+            ("roblox", self.roblox, ["roblox", "robux", "grind", "devex"]),
             ("window", WindowManager(self.config), ["window", "maximize", "minimize", "tile", "snap"]),
             ("file", FileManager(self.config), ["folder", "file", "documents", "downloads", "desktop", "find", "locate"]),
             ("web", WebController(self.config), ["google", "search", "weather", "news", "wikipedia", "open youtube", "open github", "open gmail"]),
@@ -114,6 +117,8 @@ class Jarvis:
         normalized = normalize_command(command)
         if not normalized:
             return JarvisResponse(text="I did not hear a command, sir.", success=False, intent="empty")
+        if normalized in {"jarvis", "hey jarvis", "jervis", "jrvis"}:
+            return JarvisResponse(text=f"At your service, sir. How may I assist?", success=True, intent="greeting")
 
         # Routines first.
         routine = self.automation.process_routine(command, lambda item: self.process_command(item, speak=False))
@@ -141,8 +146,21 @@ class Jarvis:
     def process_command(self, command: str, speak: bool | None = None) -> JarvisResponse:
         """Process a command and optionally speak the final response."""
         raw_command = command or ""
+        raw_norm = normalize_command(raw_command).strip()
         command = self.clean_command(raw_command)
         normalized = normalize_command(command)
+
+        # Speaking just the wake word is a greeting, not an empty command.
+        if raw_norm in {"jarvis", "hey jarvis", "jervis", "jrvis"}:
+            result = JarvisResponse(text="At your service, sir. How may I assist?", success=True, intent="greeting")
+            self.memory.log_interaction(raw_norm, result.intent, result.success)
+            self.memory.save_conversation(raw_norm, result.text)
+            if speak is None:
+                speak = bool(self.config.get("behavior.speak_responses", True))
+            if speak:
+                self.tts.speak(result.text, blocking=False)
+                result.spoken = True
+            return result
 
         # Explicit command chains, e.g. "open chrome then volume 40".
         chain_parts = self.automation.split_chain(command)

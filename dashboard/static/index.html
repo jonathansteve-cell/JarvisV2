@@ -1,0 +1,752 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>J.A.R.V.I.S V2</title>
+<style>
+  :root{
+    --bg:#04121C; --panel:#071E2C; --panel2:#082435;
+    --cyan:#19E6F2; --bright:#7FF3FF; --soft:#B8F7FF; --deep:#0E7C8A;
+    --line:rgba(25,230,242,.45); --line-soft:rgba(25,230,242,.16);
+    --text:#DFF9FF; --muted:#6E93A8; --green:#3AF07C; --red:#FF4D5E;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;height:100%}
+  body{display:flex;flex-direction:column;overflow:hidden}
+  ::-webkit-scrollbar{width:7px;height:7px}
+  ::-webkit-scrollbar-thumb{background:#0E3A4C;border-radius:4px}
+
+  /* ---------- global nav ---------- */
+  nav{position:relative;z-index:5;display:flex;justify-content:center;align-items:center;gap:46px;
+      padding:12px 20px 10px;background:rgba(2,10,16,.85);border-bottom:1px solid var(--line-soft)}
+  .nav-item{display:flex;align-items:center;gap:8px;font-size:13.5px;color:#DCEFF5;cursor:pointer;
+      padding:4px 10px;user-select:none}
+  .nav-item .ico{font-size:12px;color:var(--cyan)}
+  .nav-item:hover{color:#fff}
+  .nav-item.active{border-bottom:2px solid var(--cyan)}
+  #telemetry-tag{position:absolute;right:18px;top:6px;font-family:Consolas,monospace;font-size:9px;
+      letter-spacing:2px;color:var(--muted)}
+
+  /* ---------- views ---------- */
+  main{position:relative;z-index:2;flex:1;overflow:hidden}
+  .view{position:absolute;inset:0;display:none;overflow-y:auto}
+  .view.active{display:block}
+
+  /* ============ HOME ============ */
+  #view-home.active{display:flex;flex-direction:column;align-items:center;background:#000}
+  #orb{max-width:min(58vh,660px);max-height:56vh;width:auto;animation:orbPulse 7s ease-in-out infinite}
+  @keyframes orbPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.012)}}
+  .home-chat{width:min(760px,92vw);display:flex;flex-direction:column;gap:10px;margin:4px 0 18px}
+  #home-log{max-height:130px;overflow-y:auto;font-family:Consolas,monospace;font-size:12.5px;line-height:1.55;
+      padding:4px 8px;text-align:left}
+  #home-log .u{color:#E8F6FF} #home-log .j{color:var(--cyan)} #home-log .s{color:var(--muted);font-size:10.5px}
+  #home-log p{margin:4px 0}
+  #home-log .ts{color:var(--muted);font-size:10px;margin-left:8px}
+  .home-in{display:flex;gap:10px}
+  input[type=text]{flex:1;background:rgba(25,230,242,.06);border:1px solid var(--line);border-radius:6px;
+      padding:12px 15px;color:var(--soft);font-size:13.5px;outline:none;font-family:Consolas,monospace}
+  input[type=text]:focus{border-color:var(--cyan);box-shadow:0 0 14px rgba(25,230,242,.25)}
+  input::placeholder{color:var(--muted)}
+  button{background:#0A2230;color:var(--bright);border:1px solid var(--line);border-radius:6px;
+      padding:11px 18px;font-family:Consolas,monospace;font-weight:700;font-size:12px;letter-spacing:1px;
+      cursor:pointer;transition:.15s}
+  button:hover{background:#123A4C;color:#fff;box-shadow:0 0 14px rgba(25,230,242,.35)}
+  button.green{background:var(--green);color:#03210F;border-color:var(--green)}
+  button.green:hover{background:#6FF5A0;box-shadow:0 0 16px rgba(58,240,124,.45)}
+
+  /* ============ DASHBOARD — exact reference layout ============ */
+  #view-dash.active{display:block;padding:16px 18px 26px}
+  .dash-head{display:flex;align-items:center;margin-bottom:16px;gap:14px}
+  .dash-logo{border:1px solid var(--line);background:var(--panel);padding:8px 18px;
+      font-family:Consolas,monospace;font-size:16px;font-weight:700;letter-spacing:2px;color:var(--cyan);
+      box-shadow:0 0 14px rgba(25,230,242,.18), inset 0 0 14px rgba(25,230,242,.06)}
+  .dash-clock{margin-left:auto;font-family:Consolas,monospace;font-size:12.5px;color:var(--soft);letter-spacing:1px}
+  .dot{display:inline-block;width:11px;height:11px;border-radius:50%;vertical-align:middle;margin-left:8px}
+  .dot.red{background:var(--red);box-shadow:0 0 8px var(--red)}
+  .dot.grn{background:var(--green);box-shadow:0 0 8px var(--green)}
+
+  .dash-grid{display:grid;grid-template-columns:250px 1fr 300px;gap:16px}
+  @media(max-width:1050px){.dash-grid{grid-template-columns:1fr}}
+  .col{display:flex;flex-direction:column;gap:16px;min-width:0}
+
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:4px;position:relative;
+      box-shadow:0 0 12px rgba(25,230,242,.08)}
+  .panel::before,.panel::after{content:"";position:absolute;width:14px;height:14px;border-color:var(--cyan);border-style:solid}
+  .panel::before{top:-1px;left:-1px;border-width:2px 0 0 2px}
+  .panel::after{bottom:-1px;right:-1px;border-width:0 2px 2px 0}
+  .panel h3{font-family:Consolas,monospace;font-size:13px;letter-spacing:1.5px;color:var(--text);
+      padding:12px 14px 8px;font-weight:600}
+  .panel h3 em{float:right;font-style:normal;color:var(--muted);font-size:9.5px;letter-spacing:1px}
+
+  #facescan,#neural{display:block;margin:2px auto 8px}
+  .brain-label{font-family:Consolas,monospace;text-align:center;font-size:14px;letter-spacing:2px;
+      color:var(--text);margin:2px 0 8px}
+  .ready{font-family:Consolas,monospace;font-size:30px;color:var(--green);letter-spacing:4px;text-align:center;
+      text-shadow:0 0 18px rgba(58,240,124,.6);padding:2px 0 14px;animation:readyPulse 2.4s ease-in-out infinite}
+  @keyframes readyPulse{0%,100%{text-shadow:0 0 12px rgba(58,240,124,.4)}50%{text-shadow:0 0 28px rgba(58,240,124,.95)}}
+
+  .chat-wrap{display:flex;flex-direction:column;min-height:440px}
+  .radar-zone{display:flex;align-items:flex-start;gap:18px;padding:4px 14px 0}
+  #radar{width:190px;height:190px}
+  .legend{margin-top:16px;font-family:Consolas,monospace;font-size:12px}
+  .legend div{margin:6px 0}
+  .legend .dot{margin-right:8px;margin-left:0}
+  #dash-log{flex:1;overflow-y:auto;min-height:120px;max-height:200px;font-family:Consolas,monospace;
+      font-size:12.5px;line-height:1.55;padding:12px 16px}
+  #dash-log .u{color:#E8F6FF} #dash-log .j{color:var(--cyan)} #dash-log .s{color:var(--muted);font-size:10.5px}
+  #dash-log p{margin:5px 0}
+  .ts{color:var(--muted);font-size:10px;margin-left:8px}
+  .chat-in{display:flex;gap:10px;padding:12px 16px 16px}
+
+  .mailtbl{width:100%;border-collapse:collapse;font-family:Consolas,monospace;font-size:11.5px}
+  .mailtbl th{color:var(--soft);text-align:left;padding:6px 14px;border-bottom:1px solid var(--line-soft);font-weight:600}
+  .mailtbl td{padding:6px 14px;color:var(--muted);border-bottom:1px dashed rgba(25,230,242,.10);
+      overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px}
+  .mailtbl tr:last-child td{border:none}
+  .mailtbl td.what{color:var(--soft)}
+
+  ul.list{list-style:none;font-family:Consolas,monospace;font-size:12px;padding:2px 4px 8px}
+  ul.list li{padding:6px 12px;display:flex;justify-content:space-between;gap:10px;border-bottom:1px dashed rgba(25,230,242,.10)}
+  ul.list li:last-child{border:none}
+  ul.list .t{color:var(--muted)}
+  ul.list .txt{color:var(--soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .empty{color:var(--muted);font-size:11px;font-style:italic;padding:8px 14px}
+  .add-row{display:flex;gap:8px;padding:0 12px 12px}
+  .add-row input{font-size:11px;padding:8px 10px}
+  .add-row button{font-size:10px;padding:8px 10px}
+
+  #cam{width:100%;height:150px;object-fit:cover;border-radius:2px;background:#02080D;display:none}
+  .cam-off{height:150px;display:flex;align-items:center;justify-content:center;color:var(--muted);
+      font-family:Consolas,monospace;font-size:12px;letter-spacing:2px}
+  .cam-btns{display:flex;gap:8px;padding:0 12px 12px}
+  .cam-btns button{font-size:10px;padding:7px 12px}
+  .btn-red{background:rgba(255,77,94,.12);color:var(--red);border-color:rgba(255,77,94,.5)}
+  .btn-red:hover{background:rgba(255,77,94,.25)}
+
+  .usage{font-family:Consolas,monospace;font-size:12.5px;color:var(--soft);padding:0 14px 12px}
+  .drive-bar{height:6px;background:rgba(25,230,242,.12);border-radius:3px;overflow:hidden;margin:8px 14px}
+  .drive-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--deep),var(--cyan))}
+
+  .filetbl{width:100%;border-collapse:collapse;font-family:Consolas,monospace;font-size:12px}
+  .filetbl th{color:var(--soft);text-align:left;padding:7px 16px;border-bottom:1px solid var(--line-soft);font-weight:600}
+  .filetbl th.sz{color:var(--green)}
+  .filetbl td{padding:7px 16px;border-bottom:1px solid var(--panel2);color:var(--soft)}
+  .filetbl td.sz{color:var(--green)}
+  .filetbl td.mt{color:var(--muted)}
+  .filetbl tr:last-child td{border:none}
+
+  /* ============ CHAT view ============ */
+  #view-chat.active{display:flex;flex-direction:column;padding:22px 26px}
+  .panel.tall{flex:1;display:flex;flex-direction:column;min-height:0}
+  #chatlog{flex:1;overflow-y:auto;font-family:Consolas,monospace;font-size:12.5px;line-height:1.55;padding:14px 16px}
+  #chatlog .u{color:#E8F6FF} #chatlog .j{color:var(--cyan)} #chatlog .s{color:var(--muted);font-size:10.5px}
+  #chatlog p{margin:5px 0}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-item active" data-view="home" onclick="showView('home')"><span class="ico">✦</span>Home</div>
+  <div class="nav-item" data-view="chat" onclick="showView('chat')"><span class="ico">🗨</span>Chat</div>
+  <div class="nav-item" data-view="dash" onclick="showView('dash')"><span class="ico">▦</span>Dashboard</div>
+  <span class="nav-item" id="mic-chip" style="color:var(--green);font-family:Consolas,monospace;font-size:11.5px" onclick="toggleMic()">🎙 MIC: starting…</span>
+  <span id="telemetry-tag">TELEMETRY ▾</span>
+</nav>
+
+<main>
+  <!-- ================= HOME : orb + live answers ================= -->
+  <section class="view active" id="view-home">
+    <canvas id="orb" width="620" height="620"></canvas>
+    <div class="home-chat">
+      <div id="home-log"></div>
+      <div class="home-in">
+        <input type="text" id="home-in" placeholder="Ask JARVIS anything… press Enter" autocomplete="off">
+        <button class="green" onclick="sendFrom('home-in')">SEND</button>
+        <button onclick="voiceInput()">🎙 SPEAK</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= CHAT ================= -->
+  <section class="view" id="view-chat">
+    <div class="panel tall">
+      <h3>CHAT SECTION <em id="provider">offline persona</em></h3>
+      <div id="chatlog"></div>
+      <div class="chat-in">
+        <input type="text" id="chat-in" placeholder="Type your message here… Press Enter to send" autocomplete="off">
+        <button class="green" onclick="sendFrom('chat-in')">SEND</button>
+        <button onclick="voiceInput()">🎙 SPEAK</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= DASHBOARD : exact reference ================= -->
+  <section class="view" id="view-dash">
+    <div class="dash-head">
+      <div class="dash-logo">JARVIS DASHBOARD</div>
+      <div class="dash-clock">Uptime:[<span id="uptime">00:00:00</span>] &nbsp;Time:[<span id="dtime">--:--:--</span>]<span class="dot red"></span><span class="dot grn"></span></div>
+    </div>
+
+    <div class="dash-grid">
+      <!-- LEFT : face scan + brain + ready -->
+      <div class="col">
+        <div class="panel" style="flex:1">
+          <h3 style="text-align:center">FACE SCAN</h3>
+          <canvas id="facescan" width="196" height="216"></canvas>
+          <div class="brain-label">AI BRAIN</div>
+          <canvas id="neural" width="196" height="150"></canvas>
+          <div class="brain-label">AI BRAIN</div>
+          <div class="ready">READY</div>
+        </div>
+      </div>
+
+      <!-- CENTER : chat + file explorer -->
+      <div class="col">
+        <div class="panel chat-wrap">
+          <h3>CHAT SECTION <em id="provider2">offline persona</em></h3>
+          <div class="radar-zone">
+            <canvas id="radar" width="190" height="190"></canvas>
+            <div class="legend">
+              <div><span class="dot grn"></span>Active</div>
+              <div><span class="dot" style="background:var(--cyan);box-shadow:0 0 8px var(--cyan)"></span>Tracking</div>
+            </div>
+          </div>
+          <div id="dash-log"></div>
+          <div class="chat-in">
+            <input type="text" id="dash-in" placeholder="Type your message here… Press Enter to send" autocomplete="off">
+            <button class="green" onclick="sendFrom('dash-in')">SEND</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>FILE EXPLORER</h3>
+          <table class="filetbl">
+            <thead><tr><th>Filename</th><th class="sz">Size</th><th>Modified Time</th></tr></thead>
+            <tbody id="files"><tr><td class="empty" colspan="3">Scanning local storage…</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- RIGHT : inbox matrix + tasks + notes + camera + drive -->
+      <div class="col">
+        <div class="panel">
+          <h3>GMAIL INBOX MATRIX</h3>
+          <table class="mailtbl">
+            <thead><tr><th>Subject</th><th>Sender</th><th>Time</th></tr></thead>
+            <tbody id="inbox"><tr><td colspan="3" class="empty">No traffic yet.</td></tr></tbody>
+          </table>
+        </div>
+
+        <div class="panel">
+          <h3>ACTIVE GOOGLE TASKS</h3>
+          <ul class="list" id="tasks"><li class="empty">No open tasks.</li></ul>
+          <div class="add-row">
+            <input type="text" id="task-in" placeholder="Add a new task…">
+            <button class="green" onclick="addFromInput('task-in','add task:')">ADD</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>APPLE NOTES</h3>
+          <div style="font-family:Consolas,monospace;font-size:11px;color:var(--cyan);padding:6px 14px 0">Recent Notes</div>
+          <ul class="list" id="notes"><li class="empty">No notes yet.</li></ul>
+          <div class="add-row">
+            <input type="text" id="note-in" placeholder="New note…">
+            <button class="green" onclick="addFromInput('note-in','take note:')">ADD</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>CAMERA</h3>
+          <video id="cam" autoplay muted playsinline></video>
+          <div class="cam-off" id="cam-off">Feed Offline</div>
+          <div class="cam-btns">
+            <button class="green" onclick="camEnable()">ENABLE</button>
+            <button class="btn-red" onclick="camDisable()">EXIT</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>DRIVE STORAGE MATRIX</h3>
+          <div class="usage" id="drive-usage">Usage: —</div>
+          <div class="drive-bar"><i id="drive-fill" style="width:0%"></i></div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+/* ================= shared chat ================= */
+let TTS_ON = true;
+const $ = id => document.getElementById(id);
+const LOGS = ["home-log","chatlog","dash-log"];
+const messages = [];
+
+function stamp(){ const d=new Date(); return "["+d.toTimeString().slice(0,8)+"]"; }
+function renderLogs(){
+  LOGS.forEach(id=>{
+    const el=$(id); if(!el) return;
+    el.innerHTML=messages.map(m=>`<p><span class="${m.cls}">${esc(m.who)} ${esc(m.text)}</span><span class="ts">${m.ts}</span></p>`).join("");
+    el.scrollTop=el.scrollHeight;
+  });
+}
+function push(cls,who,text){ messages.push({cls,who,text,ts:stamp()}); if(messages.length>60)messages.shift(); renderLogs(); }
+function esc(s){const d=document.createElement("div");d.textContent=s;return d.innerHTML}
+push("s","SYSTEM:","Neural link established. All modules online, sir.");
+
+async function api(path, body){
+  const opt = body ? {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)} : {};
+  const res = await fetch(path, opt);
+  return res.json();
+}
+async function runCommand(cmd){
+  push("u","YOU:",cmd);
+  try{
+    const r=await api("/api/command",{command:cmd});
+    push("j","JARVIS:",r.text||r.error||"…");
+    if(TTS_ON && r.text) speakText(r.text);
+  }catch(e){ push("s","SYSTEM:","Connection error."); }
+}
+function sendFrom(inputId){
+  const i=$(inputId), c=i.value.trim(); if(!c)return; i.value=""; runCommand(c);
+}
+function addFromInput(inputId,prefix){ const i=$(inputId),v=i.value.trim(); if(!v)return; i.value=""; runCommand(prefix+" "+v); }
+["home-in","chat-in","dash-in","task-in","note-in"].forEach(id=>{
+  const el=$(id); if(!el)return;
+  el.addEventListener("keydown",e=>{
+    if(e.key!=="Enter")return;
+    if(id==="task-in")addFromInput(id,"add task:");
+    else if(id==="note-in")addFromInput(id,"take note:");
+    else sendFrom(id);
+  });
+});
+
+/* ================= views ================= */
+function showView(v){
+  document.querySelectorAll(".view").forEach(el=>el.classList.remove("active"));
+  $("view-"+v).classList.add("active");
+  document.querySelectorAll(".nav-item").forEach(n=>n.classList.toggle("active",n.dataset.view===v));
+}
+
+/* ================= voice ================= */
+function speakText(text){
+  try{
+    speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(text);
+    const vs=speechSynthesis.getVoices();
+    const pref=vs.find(v=>/en-gb/i.test(v.lang)&&/male|david|george|guy/i.test(v.name))||
+               vs.find(v=>/en-gb/i.test(v.lang))||vs.find(v=>/^en/i.test(v.lang));
+    if(pref) u.voice=pref;
+    u.rate=.92; u.pitch=.55; u.volume=1;
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+function voiceInput(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){ push("s","SYSTEM:","Speech recognition not supported here — type instead, sir."); return; }
+  try{
+    const rec=new SR(); rec.lang="en-US"; rec.interimResults=false;
+    push("s","SYSTEM:","Listening…");
+    rec.onresult=e=>{ runCommand(e.results[0][0].transcript); };
+    rec.onerror=()=>push("s","SYSTEM:","Microphone unavailable or permission denied.");
+    rec.start();
+  }catch(e){ push("s","SYSTEM:","Could not start microphone."); }
+}
+
+/* ================= camera ================= */
+let camStream=null;
+async function camEnable(){
+  try{
+    camStream=await navigator.mediaDevices.getUserMedia({video:true});
+    $("cam").srcObject=camStream; $("cam").style.display="block";
+    $("cam-off").style.display="none";
+  }catch(e){ $("cam-off").textContent="Feed Denied"; }
+}
+function camDisable(){
+  if(camStream){camStream.getTracks().forEach(t=>t.stop());camStream=null;}
+  $("cam").style.display="none"; $("cam-off").style.display="flex"; $("cam-off").textContent="Feed Offline";
+}
+
+/* ================= live orb (coded 3D wireframe sun) ================= */
+(function(){
+const cv=$("orb"), g=cv.getContext("2d");
+const TILT=0.42,F=3.4; let spin=0.9;
+function rng(seed){let s=seed>>>0;return function(){s=(s*1664525+1013904223)>>>0;return s/4294967296}}
+const rnd=rng(11);
+const rings=[];
+for(let lat=-75;lat<=75;lat+=15){const la=lat*Math.PI/180;const ring=[];
+  for(let l=0;l<360;l+=6){const ln=l*Math.PI/180;ring.push([Math.cos(la)*Math.cos(ln),Math.sin(la),Math.cos(la)*Math.sin(ln)]);}rings.push(ring);}
+for(let lon=0;lon<180;lon+=15){const lo=lon*Math.PI/180;const ring=[];
+  for(let a=0;a<360;a+=6){const aa=a*Math.PI/180;ring.push([Math.cos(aa)*Math.cos(lo),Math.sin(aa),Math.cos(aa)*Math.sin(lo)]);}rings.push(ring);}
+const spikes=[];
+for(let i=0;i<70;i++){const th=rnd()*Math.PI*2,ph=Math.acos(rnd()*2-1);
+  spikes.push({d:[Math.sin(ph)*Math.cos(th),Math.cos(ph),Math.sin(ph)*Math.sin(th)],L:1.2+rnd()*1.7,bright:rnd()<0.45});}
+const dust=[];
+for(let i=0;i<240;i++){const th=rnd()*Math.PI*2;
+  let rr=1.32+(rnd()+rnd()+rnd()-1.5)*0.30;rr=Math.max(1.04,Math.min(rr,2.1));
+  dust.push({th,rr,y0:(rnd()-0.5)*0.15,sp:0.001+rnd()*0.0035,sz:rnd()<0.22?1.8:1.2,bright:rnd()<0.22});}
+const arcs=[{R:1.38,extent:4.4,phase:0.6,wob:0.05,sp:0.0009},{R:1.68,extent:3.8,phase:3.4,wob:-0.08,sp:-0.0007},{R:1.92,extent:4.9,phase:5.2,wob:0.11,sp:0.0005}];
+const BACK=[70,32,7],MID=[165,80,10],FRONT=[255,158,58];
+function lerpC(c1,c2,t){return `rgb(${Math.round(c1[0]+(c2[0]-c1[0])*t)},${Math.round(c1[1]+(c2[1]-c1[1])*t)},${Math.round(c1[2]+(c2[2]-c1[2])*t)})`}
+function resize(){const s=Math.min(innerHeight*0.56,620);cv.width=s;cv.height=s;cv.style.width=s+"px";cv.style.height=s+"px";}
+addEventListener("resize",resize);resize();
+function frame(){
+  const S=cv.width,cx=S/2,cy=S/2,pr=S*0.185;spin+=0.0016;
+  g.clearRect(0,0,S,S);
+  const cs=Math.cos(spin),ss=Math.sin(spin),ct=Math.cos(TILT),st=Math.sin(TILT);
+  function proj(x,y,z){const x1=x*cs+z*ss,z1=-x*ss+z*cs;const y2=y*ct-z1*st,z2=y*st+z1*ct;const s=F/(F+z2);
+    return [cx+x1*s*pr,cy-y2*s*pr,(z2+1)/2];}
+  const gr=g.createRadialGradient(cx,cy,0,cx,cy,pr*0.9);
+  gr.addColorStop(0,"rgba(255,214,140,0.95)");gr.addColorStop(0.12,"rgba(255,170,70,0.85)");
+  gr.addColorStop(0.28,"rgba(190,90,12,0.5)");gr.addColorStop(0.55,"rgba(90,40,6,0.25)");gr.addColorStop(1,"rgba(0,0,0,0)");
+  g.fillStyle=gr;g.beginPath();g.arc(cx,cy,pr*0.9,0,7);g.fill();
+  for(const ring of rings){let prev=null;
+    for(let i=0;i<=ring.length;i++){const p0=ring[i%ring.length];const p=proj(p0[0],p0[1],p0[2]);
+      if(prev){const dep=(p[2]+prev[2])/2;let col,w;
+        if(dep>0.55){col=lerpC([28,13,3],BACK,(dep-0.55)/0.45);w=1;}
+        else{const t=1-dep/0.55;col=lerpC(MID,FRONT,t);w=1;
+          g.strokeStyle="rgba(90,42,8,0.9)";g.lineWidth=3;
+          g.beginPath();g.moveTo(prev[0],prev[1]);g.lineTo(p[0],p[1]);g.stroke();}
+        g.strokeStyle=col;g.lineWidth=w;
+        g.beginPath();g.moveTo(prev[0],prev[1]);g.lineTo(p[0],p[1]);g.stroke();}
+      prev=p;}}
+  for(const sp of spikes){const dx=sp.d[0],dy=sp.d[1],dz=sp.d[2];
+    const a=proj(dx*0.98,dy*0.98,dz*0.98),b=proj(dx*sp.L,dy*sp.L,dz*sp.L);
+    g.strokeStyle=sp.bright?"rgba(255,158,58,0.9)":"rgba(200,100,20,0.8)";
+    g.lineWidth=1;g.beginPath();g.moveTo(a[0],a[1]);g.lineTo(b[0],b[1]);g.stroke();}
+  for(const A of arcs){A.phase+=A.sp;let prev=null;const N=150;
+    for(let k=0;k<=N;k++){const th=A.phase+k/N*A.extent;const y=A.wob*Math.sin(th*2+A.R*5);
+      const p=proj(A.R*Math.cos(th),y,A.R*Math.sin(th));
+      if(prev){const dep=(p[2]+prev[2])/2;const fade=Math.abs(k/N-0.5)*2;
+        g.strokeStyle=lerpC([55,24,5],dep<0.5?FRONT:MID,1-fade*0.85);g.lineWidth=dep<0.5?2:1;
+        g.beginPath();g.moveTo(prev[0],prev[1]);g.lineTo(p[0],p[1]);g.stroke();}
+      prev=p;}}
+  for(const p0 of dust){p0.th+=p0.sp;const y=p0.y0+0.045*Math.sin(p0.th*2);
+    const p=proj(p0.rr*Math.cos(p0.th),y,p0.rr*Math.sin(p0.th));
+    g.fillStyle=p0.bright?"rgba(255,190,105,0.95)":"rgba(190,95,20,0.8)";
+    g.fillRect(p[0]-p0.sz/2,p[1]-p0.sz/2,p0.sz,p0.sz);}
+  g.fillStyle="rgba(255,252,240,0.98)";g.beginPath();g.arc(cx,cy,pr*0.05,0,7);g.fill();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+})();
+
+/* ================= face scan (realistic shaded 3D head) ================= */
+(function(){
+const cv=$("facescan"),g=cv.getContext("2d");
+const W=196,H=216,CX=W/2,CY=H/2,SC=52,F=3.2;
+const NV=18,NU=40;
+
+function headPos(u,v){
+  /* anatomically-inspired parametric head, +z is the face */
+  const y=v*0.98;
+  const absv=Math.abs(v);
+  const prof=Math.pow(Math.max(0,1-Math.pow(absv,2.35)),1/2.15);
+  let x=Math.sin(u)*prof, z=Math.cos(u)*prof;
+  if(z>0) z*=0.90;                       /* flatter face plane */
+  if(z<0) z*=1.05;                       /* longer skull back */
+  if(v<-0.22){                           /* jaw -> chin taper */
+    const tt=(-v-0.22)/0.78;
+    const kx=1-0.50*Math.pow(tt,1.6), kz=1-0.34*Math.pow(tt,1.6);
+    x*=kx; z*=Math.max(kz,0.42);
+  }
+  if(v>0.55) x*=0.93;                    /* crown */
+  /* nose: ridge + tip */
+  const nose=Math.exp(-Math.pow(u/0.42,2))*(Math.exp(-Math.pow((y+0.12)/0.075,2))*0.10+Math.exp(-Math.pow((y+0.20)/0.030,2))*0.15);
+  if(z>0) z+=nose;
+  /* eye sockets: slight inward curve */
+  const socket=Math.exp(-Math.pow((Math.abs(u)-0.55)/0.30,2))*Math.exp(-Math.pow((y-0.14)/0.065,2));
+  if(z>0) z-=socket*0.055;
+  /* brow ridge */
+  const brow=Math.exp(-Math.pow(u/0.62,2))*Math.exp(-Math.pow((y-0.24)/0.045,2));
+  if(z>0) z+=brow*0.045;
+  /* lips */
+  const lips=(Math.exp(-Math.pow((y+0.40)/0.035,2))+0.7*Math.exp(-Math.pow((y+0.48)/0.030,2)))*Math.exp(-Math.pow(u/0.40,2));
+  if(z>0) z+=lips*0.055;
+  /* chin */
+  const chin=Math.exp(-Math.pow(u/0.30,2))*Math.exp(-Math.pow((y+0.62)/0.055,2));
+  if(z>0) z+=chin*0.07;
+  /* cheekbones */
+  const cheek=Math.exp(-Math.pow((Math.abs(u)-0.85)/0.38,2))*Math.exp(-Math.pow((y-0.02)/0.10,2));
+  if(z>0) z+=cheek*0.035;
+  /* ears: side bumps */
+  const ear=Math.exp(-Math.pow((Math.abs(Math.abs(u)-Math.PI/2))/0.16,2))*Math.exp(-Math.pow((y-0.02)/0.10,2));
+  if(Math.abs(Math.sin(u))>0.55) x+=Math.sign(Math.sin(u))*ear*0.10;
+  return [x,y,z];
+}
+
+function draw(t){
+  g.clearRect(0,0,W,H);
+  const yaw=0.16+0.32*Math.sin(t/3000), tilt=0.07;
+  const cyw=Math.cos(yaw),syw=Math.sin(yaw),ct=Math.cos(tilt),st=Math.sin(tilt);
+  function proj(p){
+    const x1=p[0]*cyw+p[2]*syw, z1=-p[0]*syw+p[2]*cyw;
+    const y2=p[1]*ct-z1*st, z2=p[1]*st+z1*ct;
+    const s=F/(F+z2);
+    return [CX+x1*s*SC, CY-y2*s*SC, (z2+1)/2];
+  }
+  const P3=[],P2=[];
+  for(let i=0;i<=NV;i++){
+    const v=i/NV*2-1,row3=[],row2=[];
+    for(let j=0;j<=NU;j++){const p3=headPos(j/NU*Math.PI*2,v);row3.push(p3);row2.push(proj(p3));}
+    P3.push(row3);P2.push(row2);
+  }
+  const quads=[];
+  for(let i=0;i<NV;i++)for(let j=0;j<NU;j++){
+    const a=P3[i][j],b=P3[i][j+1],c=P3[i+1][j+1],e=P3[i+1][j];
+    const u1=[b[0]-a[0],b[1]-a[1],b[2]-a[2]],u2=[e[0]-a[0],e[1]-a[1],e[2]-a[2]];
+    let n=[u1[1]*u2[2]-u1[2]*u2[1],u1[2]*u2[0]-u1[0]*u2[2],u1[0]*u2[1]-u1[1]*u2[0]];
+    const ln=Math.hypot(n[0],n[1],n[2])||1;n=[n[0]/ln,n[1]/ln,n[2]/ln];
+    quads.push({p:P2[i][j],q:P2[i][j+1],r:P2[i+1][j+1],s:P2[i+1][j],dep:(P2[i][j][2]+P2[i][j+1][2]+P2[i+1][j+1][2]+P2[i+1][j][2])/4,n});
+  }
+  quads.sort((A,B)=>B.dep-A.dep);
+  for(const q of quads){
+    const nx=q.n[0]*cyw+q.n[2]*syw, nz1=-q.n[0]*syw+q.n[2]*cyw;
+    const ny=q.n[1]*ct-nz1*st, nz=q.n[1]*st+nz1*ct;
+    const facing=Math.max(0,-nz);
+    const key=Math.max(0,0.35*facing+0.65*Math.max(0,nx*-0.55)+0.35*Math.max(0,ny));
+    const bright=Math.min(1,0.04+0.95*facing+0.55*key*facing);
+    const R=Math.round(4+42*bright), Gc=Math.round(24+150*bright), B=Math.round(38+180*bright);
+    g.fillStyle=`rgb(${R},${Gc},${B})`;
+    g.beginPath();g.moveTo(q.p[0],q.p[1]);g.lineTo(q.q[0],q.q[1]);g.lineTo(q.r[0],q.r[1]);g.lineTo(q.s[0],q.s[1]);g.closePath();g.fill();
+    if(facing>0.03){
+      g.strokeStyle=`rgba(80,220,240,${(0.05+0.22*bright).toFixed(3)})`;
+      g.lineWidth=0.45;g.stroke();
+    }
+  }
+  /* face features drawn on the 3D surface */
+  function surf(u,y,off=0.04){
+    const p=headPos(u,y);
+    const pr=Math.hypot(p[0],p[2])||1;
+    return proj([p[0]*(1+off/pr*0),p[1],p[2]+off]);
+  }
+  /* brows */
+  g.strokeStyle="rgba(160,244,255,0.95)";g.lineWidth=1.5;
+  [-1,1].forEach(side=>{
+    g.beginPath();
+    for(let k=0;k<=8;k++){
+      const u=side*(0.28+k/8*0.42), y=0.235-Math.sin(k/8*Math.PI)*0.02;
+      const p=surf(u,y,0.06);
+      k?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]);
+    }
+    g.stroke();
+  });
+  /* eyes: outline + iris + pupil */
+  [-1,1].forEach(side=>{
+    const c=surf(side*0.55,0.14,0.075);
+    g.strokeStyle="rgba(160,244,255,0.95)";g.lineWidth=1;
+    g.beginPath();g.ellipse(c[0],c[1],10,4.6,0,0,7);g.stroke();
+    g.fillStyle="rgba(127,243,255,0.95)";
+    g.beginPath();g.arc(c[0],c[1],3.6,0,7);g.fill();
+    g.fillStyle="rgba(3,20,28,0.98)";
+    g.beginPath();g.arc(c[0],c[1],1.7,0,7);g.fill();
+  });
+  /* nose line */
+  g.strokeStyle="rgba(25,230,242,0.6)";g.lineWidth=0.9;
+  g.beginPath();
+  for(let k=0;k<=6;k++){
+    const y=0.05-k/6*0.30;
+    const p=surf(0,y,0.10);
+    k?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]);
+  }
+  g.stroke();
+  /* mouth */
+  g.strokeStyle="rgba(160,244,255,0.95)";g.lineWidth=1.6;
+  g.beginPath();
+  for(let k=0;k<=10;k++){
+    const u=-0.50+k/10*1.00;
+    const y=-0.44+Math.sin(k/10*Math.PI)*0.015;
+    const p=surf(u,y,0.05);
+    k?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]);
+  }
+  g.stroke();
+  /* scan sweep */
+  const sy=((t/26)%(H+40))-20;
+  g.fillStyle="rgba(127,243,255,0.06)";g.fillRect(0,sy-9,W,18);
+  g.fillStyle="rgba(127,243,255,0.45)";g.fillRect(0,sy,W,1.3);
+  requestAnimationFrame(draw);
+}
+requestAnimationFrame(draw);
+})();
+
+/* ================= AI brain (true 3D rotating neural lattice) ================= */
+(function(){
+const cv=$("neural"),g=cv.getContext("2d");
+const W=196,H=150,CX=W/2,CY=H/2,SC=60,F=3.0;
+function rng(seed){let s=seed>>>0;return function(){s=(s*1664525+1013904223)>>>0;return s/4294967296}}
+const rnd=rng(7);
+const nodes=[];
+for(let i=0;i<40;i++){
+  const th=rnd()*Math.PI*2, ph=Math.acos(rnd()*2-1);
+  nodes.push([Math.sin(ph)*Math.cos(th), Math.sin(ph)*Math.sin(th)*0.62, Math.cos(ph)*0.56]);
+}
+const edges=[];
+for(let i=0;i<nodes.length;i++){
+  const d=nodes.map((n,j)=>[Math.hypot(n[0]-nodes[i][0],n[1]-nodes[i][1],n[2]-nodes[i][2]),j])
+    .filter(e=>e[1]!==i).sort((a,b)=>a[0]-b[0]);
+  for(let k=0;k<2;k++){const j=d[k][1];
+    const key=[Math.min(i,j),Math.max(i,j)].join("-");
+    if(!edges.some(e=>e.key===key)) edges.push({a:i,b:j,key});}
+}
+function draw(t){
+  g.clearRect(0,0,W,H);
+  const yaw=t/3000, tilt=0.42+0.06*Math.sin(t/1700);
+  const cy_=Math.cos(yaw),sy_=Math.sin(yaw),ct=Math.cos(tilt),st=Math.sin(tilt);
+  function P(p){
+    const x1=p[0]*cy_+p[2]*sy_, z1=-p[0]*sy_+p[2]*cy_;
+    const y2=p[1]*ct-z1*st, z2=p[1]*st+z1*ct;
+    const s=F/(F+z2);
+    return [CX+x1*s*SC, CY-y2*s*SC, (z2+1)/2];
+  }
+  const pts=nodes.map(P);
+  for(const e of edges){
+    const a=pts[e.a],b=pts[e.b];
+    const dep=(a[2]+b[2])/2;
+    g.strokeStyle=`rgba(25,230,242,${(0.07+0.30*dep).toFixed(3)})`;
+    g.lineWidth=0.6+dep*0.6;
+    g.beginPath();g.moveTo(a[0],a[1]);g.lineTo(b[0],b[1]);g.stroke();
+    const ph=(t/1100+(e.a*3+e.b)*0.13)%1;
+    if(ph<0.16){
+      const k=ph/0.16;
+      g.fillStyle="rgba(127,243,255,0.95)";
+      g.beginPath();g.arc(a[0]+(b[0]-a[0])*k,a[1]+(b[1]-a[1])*k,1.7,0,7);g.fill();
+    }
+  }
+  pts.forEach((p,i)=>{
+    const pulse=0.6+0.4*Math.sin(t/460+i*1.7);
+    g.fillStyle=`rgba(25,230,242,${(0.25+0.75*p[2]).toFixed(3)})`;
+    g.beginPath();g.arc(p[0],p[1],1.4+2.2*p[2],0,7);g.fill();
+    g.fillStyle=`rgba(184,247,255,${(p[2]*pulse*0.9).toFixed(3)})`;
+    g.beginPath();g.arc(p[0],p[1],0.7+1.0*p[2],0,7);g.fill();
+  });
+  requestAnimationFrame(draw);
+}
+requestAnimationFrame(draw);
+})();
+
+/* ================= radar (coded) ================= */
+(function(){
+const cv=$("radar"),g=cv.getContext("2d");
+function draw(t){
+  const S=190,c=S/2;
+  g.clearRect(0,0,S,S);
+  g.strokeStyle="rgba(25,230,242,0.5)";g.lineWidth=1;
+  [28,55,82].forEach(r=>{g.beginPath();g.arc(c,c,r,0,7);g.stroke();});
+  g.beginPath();g.moveTo(c,4);g.lineTo(c,S-4);g.moveTo(4,c);g.lineTo(S-4,c);
+  g.strokeStyle="rgba(25,230,242,0.22)";g.stroke();
+  const ang=(t/1400)%(Math.PI*2);
+  const grad=g.createConicGradient?g.createConicGradient(ang,c,c):null;
+  if(grad){grad.addColorStop(0,"rgba(25,230,242,.6)");grad.addColorStop(0.10,"rgba(25,230,242,0)");grad.addColorStop(1,"rgba(25,230,242,0)");
+    g.beginPath();g.fillStyle=grad;g.moveTo(c,c);g.arc(c,c,82,ang,ang+2);g.fill();}
+  for(let i=0;i<6;i++){
+    const ba=(t/5200+i*1.7)%(Math.PI*2),r=14+((i*13)%60);
+    const bp=.5+.5*Math.sin(t/300+i*2);
+    g.beginPath();g.fillStyle=i%2?`rgba(58,240,124,${bp})`:`rgba(127,243,255,${bp})`;
+    g.arc(c+r*Math.cos(ba),c+r*Math.sin(ba),2.2,0,7);g.fill();
+  }
+  requestAnimationFrame(draw);
+}
+requestAnimationFrame(draw);
+})();
+
+/* ================= always-on microphone ================= */
+let recog=null, micWanted=true, micActive=false, ttsSpeaking=false, micBuf="", micTimer=null;
+function micChip(state,text){
+  const el=$("mic-chip"); if(!el)return;
+  el.textContent="🎙 MIC: "+text;
+  el.style.color=state==="on"?"var(--green)":state==="off"?"var(--red)":"var(--muted)";
+}
+function initRecog(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR)return null;
+  const r=new SR();
+  r.lang="en-US"; r.continuous=true; r.interimResults=true;
+  r.onresult=e=>{
+    let finalText="";
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      if(e.results[i].isFinal) finalText+=e.results[i][0].transcript;
+    }
+    if(finalText.trim()){
+      micBuf=(micBuf+" "+finalText).trim();
+      clearTimeout(micTimer);
+      micTimer=setTimeout(()=>{
+        if(micBuf && !ttsSpeaking){ const cmd=micBuf; micBuf=""; runCommand(cmd); }
+      },900);
+    }
+  };
+  r.onend=()=>{ micActive=false;
+    if(micWanted && !ttsSpeaking){ setTimeout(()=>{ if(micWanted&&!ttsSpeaking){try{r.start();micActive=true;}catch(err){}} },300); }
+  };
+  r.onerror=e=>{
+    if(e.error==="not-allowed"||e.error==="service-not-allowed"){ micWanted=false; micChip("off","BLOCKED — click to retry"); }
+    else if(e.error==="no-speech"){ /* normal in continuous mode */ }
+  };
+  return r;
+}
+function startMic(){
+  if(!recog) recog=initRecog();
+  if(!recog){ micChip("off","unsupported — use Chrome"); return; }
+  micWanted=true;
+  try{ recog.start(); micActive=true; micChip("on","LISTENING"); }catch(e){}
+}
+function pauseMic(){ if(recog&&micActive){ try{recog.abort();}catch(e){} micActive=false; } }
+function toggleMic(){
+  if(micWanted){ micWanted=false; pauseMic(); micChip("off","OFF"); }
+  else startMic();
+}
+/* speakText pauses the mic to avoid hearing itself */
+const _origSpeak=speakText;
+speakText=function(text){
+  ttsSpeaking=true; pauseMic(); micChip("off","SPEAKING");
+  try{
+    speechSynthesis.cancel();
+    const u=new SpeechSynthesisUtterance(text);
+    const vs=speechSynthesis.getVoices();
+    const pref=vs.find(v=>/en-gb/i.test(v.lang)&&/male|david|george|guy/i.test(v.name))||
+               vs.find(v=>/en-gb/i.test(v.lang))||vs.find(v=>/^en/i.test(v.lang));
+    if(pref) u.voice=pref;
+    u.rate=.92; u.pitch=.55; u.volume=1;
+    u.onend=()=>{ ttsSpeaking=false;
+      if(micWanted){ setTimeout(()=>{ if(micWanted&&!ttsSpeaking){try{recog.start();micActive=true;micChip("on","LISTENING");}catch(e){}} },350); }
+      else micChip("off","OFF");
+    };
+    speechSynthesis.speak(u);
+  }catch(e){ ttsSpeaking=false; }
+};
+/* auto-start; browsers may need one click/permission accept */
+setTimeout(startMic,600);
+document.addEventListener("click",function once(){ if(micWanted&&!micActive&&recog&&!ttsSpeaking){try{recog.start();micActive=true;micChip("on","LISTENING");}catch(e){}} document.removeEventListener("click",once); });
+
+/* ================= polling ================= */
+function fmt(n){return n==null?"—":Math.round(n).toString()}
+async function refresh(){
+  try{
+    const s=await api("/api/state");
+    $("uptime").textContent=s.uptime||"00:00:00";
+    $("dtime").textContent=new Date().toLocaleTimeString("en-US");
+    $("provider").textContent=$("provider2").textContent=s.ai.groq_ready?("groq · "+s.ai.model):"offline persona";
+    const L=(id,items,empty)=>{ $(id).innerHTML=items.length?items:`<li class="empty">${empty}</li>`; };
+    L("tasks", s.productivity.tasks.map(t=>`<li><span class="txt">${esc(t.text)}</span><span class="t">${esc(t.time)}</span></li>`).join(""),"No open tasks.");
+    L("notes", s.productivity.notes.map(n=>`<li><span class="txt">${esc(n.text)}</span></li>`).join(""),"No notes yet.");
+    if(s.conversations && s.conversations.length){
+      $("inbox").innerHTML=s.conversations.slice().reverse().map(c=>
+        `<tr><td class="what" title="${esc(c.response)}">${esc(c.command)}</td><td>Jarvis</td><td>${esc(c.time)}</td></tr>`).join("");
+    }
+    if(s.drive){
+      $("drive-usage").textContent="Usage: "+(s.drive.usage||"—");
+      const pct=s.drive.disk_percent;
+      if(pct!=null)$("drive-fill").style.width=pct+"%";
+      $("files").innerHTML=(s.drive.files||[]).map(f=>
+        `<tr><td title="${esc(f.name)}">${esc(f.name.split("/").pop())}</td><td class="sz">${esc(f.size)}</td><td class="mt">${esc(f.modified||"")}</td></tr>`).join("")
+        || `<tr><td colspan="3" class="empty">No runtime files yet.</td></tr>`;
+    }
+  }catch(e){}
+}
+refresh(); setInterval(refresh,2000);
+setInterval(()=>{ $("dtime").textContent=new Date().toLocaleTimeString("en-US"); },1000);
+try{ speechSynthesis.getVoices(); }catch(e){}
+</script>
+</body>
+</html>

@@ -5,11 +5,15 @@
     "owner_name": "sir"
   },
   "voice": {
-    "wake_words": ["hey jarvis", "jarvis"],
+    "wake_words": [
+      "hey jarvis",
+      "jarvis",
+      "jervis",
+      "jrvis"
+    ],
     "continuous_listening": true,
     "tts_enabled": true,
-    "tts_rate": 178,
-    "tts_volume": 0.9
+    "voice_profile": "dark_synthetic"
   },
   "ai": {
     "provider": "groq",
@@ -21,5 +25,12 @@
     "speak_responses": true,
     "remember_conversations": true,
     "learning_enabled": true
+  },
+  "roblox": {
+    "allow_web_open": true,
+    "default_session_minutes": 30
+  },
+  "applications": {
+    "paths": {}
   }
 }

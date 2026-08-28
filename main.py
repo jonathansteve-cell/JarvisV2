@@ -1,7 +1,9 @@
 """J.A.R.V.I.S V2 launcher.
 
 Run:
-  python main.py             # desktop UI
+  python main.py             # web dashboard (browser, always-on mic)
+  python main.py --gui       # desktop Tkinter HUD (optional)
+  python main.py --web       # web dashboard explicitly
   python main.py --voice-only # pure voice assistant
   python main.py --command "system status" # one command
 """
@@ -57,6 +59,7 @@ def run_voice_only() -> int:
 
 
 def run_gui() -> int:
+    """Optional desktop Tkinter HUD."""
     setup_logging(console=True)
     from gui.main_window import JarvisMainWindow
 
@@ -65,9 +68,20 @@ def run_gui() -> int:
     return 0
 
 
+def run_web(port: int) -> int:
+    setup_logging(console=True)
+    from dashboard.server import serve
+
+    serve(port)
+    return 0
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="J.A.R.V.I.S V2 desktop AI assistant")
-    parser.add_argument("--voice-only", action="store_true", help="Run without GUI or command text output")
+    parser.add_argument("--gui", action="store_true", help="Run the desktop Tkinter HUD instead of the web dashboard")
+    parser.add_argument("--voice-only", action="store_true", help="Pure voice assistant, no UI")
+    parser.add_argument("--web", action="store_true", help="Run the web dashboard explicitly (default)")
+    parser.add_argument("--port", type=int, default=8765, help="Port for the web dashboard")
     parser.add_argument("--command", help="Run a single text command and exit")
     args = parser.parse_args()
 
@@ -75,7 +89,9 @@ def main() -> int:
         return run_command(args.command)
     if args.voice_only:
         return run_voice_only()
-    return run_gui()
+    if args.gui:
+        return run_gui()
+    return run_web(args.port)
 
 
 if __name__ == "__main__":

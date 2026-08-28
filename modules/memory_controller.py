@@ -148,6 +148,15 @@ class MemoryController:
             interactions = conn.execute("SELECT COUNT(*) FROM interactions").fetchone()[0]
         return {"facts": facts, "conversations": conversations, "interactions": interactions}
 
+    def recent_conversations(self, limit: int = 8) -> list[dict[str, str]]:
+        """Return the most recent conversations (oldest first) for dashboard views."""
+        with self._connect() as conn:
+            rows = conn.execute(
+                "SELECT command, response, created_at FROM conversations ORDER BY id DESC LIMIT ?",
+                (limit,),
+            ).fetchall()
+        return [dict(row) for row in reversed(rows)]
+
     def process(self, command: str) -> dict[str, Any]:
         lower = command.lower().strip()
         if lower.startswith("remember "):
@@ -179,6 +188,12 @@ class MemoryController:
                 ),
                 "data": stats,
             }
+        rename = re.search(r"(?:your name is|change your name to|i will call you|i call you) ([\w .'-]+)", lower)
+        if rename:
+            name = rename.group(1).strip()
+            if name:
+                self.remember("assistant_name", name, "identity")
+                return {"success": True, "response": f"Very well, sir. You may call me {name.title()} from now on."}
         learned = self.learn_from_command(command)
         if learned:
             return {"success": True, "response": learned}

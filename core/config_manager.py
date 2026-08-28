@@ -19,14 +19,13 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "owner_name": "sir",
     },
     "voice": {
-        "wake_words": ["hey jarvis", "jarvis"],
+        "wake_words": ["hey jarvis", "jarvis", "jervis", "jrvis"],
         "language": "en-US",
         "continuous_listening": True,
         "phrase_time_limit": 7,
         "timeout": 5,
         "tts_enabled": True,
-        "tts_rate": 178,
-        "tts_volume": 0.9,
+        "voice_profile": "dark_synthetic",
         "prefer_voice_gender": "male",
     },
     "ai": {
@@ -53,16 +52,24 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "log_dir": "logs",
         "screenshot_dir": "screenshots",
         "documents_dir": "documents",
+        "music_dir": "~/Music",
+    },
+    "roblox": {
+        "allow_web_open": True,
+        "default_session_minutes": 30,
+    },
+    "applications": {
+        "paths": {},
     },
     "ui": {
-        "theme": "arc_reactor",
-        "accent": "#00D4FF",
-        "background": "#050A12",
-        "panel": "#091827",
-        "text": "#EAFBFF",
-        "muted": "#78A6B8",
+        "theme": "hero_orb",
+        "accent": "#FF8C1A",
+        "background": "#050505",
+        "panel": "#0C0C0C",
+        "text": "#F5EDE0",
+        "muted": "#9A8F7F",
         "start_minimized": False,
-        "transparency": 0.96,
+        "transparency": 0.98,
     },
     "integrations": {
         "email": {

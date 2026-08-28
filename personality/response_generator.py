@@ -35,12 +35,33 @@ class ResponseGenerator:
         self.max_history = 12
 
     def greeting(self) -> str:
-        greetings = [
-            "Jarvis online. All primary systems are operational, sir.",
-            "Good day, sir. Jarvis V2 is ready.",
-            "Systems initialized. How may I assist you today, sir?",
+        from datetime import datetime
+
+        hour = datetime.now().hour
+        if 4 <= hour < 12:
+            part = "Good morning"
+        elif 12 <= hour < 17:
+            part = "Good afternoon"
+        else:
+            part = "Good evening"
+        name = self.assistant_name()
+        openers = [
+            f"{part}, sir. All primary systems are operational.",
+            f"{part}, sir. Systems initialized and standing by.",
+            f"{part}, sir. Everything is running smoothly.",
         ]
-        return random.choice(greetings)
+        return f"{random.choice(openers)} {name} at your service. How may I assist you?"
+
+    def assistant_name(self) -> str:
+        """Return the assistant's custom name if the user renamed it, else Jarvis."""
+        try:
+            if self.memory:
+                for fact in self.memory.recall("assistant_name"):
+                    if fact.get("key") == "assistant_name" and fact.get("value"):
+                        return fact["value"].strip().title()
+        except Exception:
+            logger.debug("Assistant name lookup failed", exc_info=True)
+        return "Jarvis"
 
     def acknowledge(self, action: str) -> str:
         templates = [
@@ -56,7 +77,8 @@ class ResponseGenerator:
             return (
                 "I can control applications, windows, screenshots, files, web searches, reminders, "
                 "email, WhatsApp, Spotify, calendar, phone calls, Zoom, Word documents, smart-home "
-                "devices, Wake-on-LAN, memory, and AI conversation when configured."
+                "devices, Wake-on-LAN, memory, jokes, Roblox grind tracking, and AI conversation "
+                "when configured."
             )
         if "turn on" in lower and "pc" in lower:
             return (
@@ -65,6 +87,11 @@ class ResponseGenerator:
             )
         if "hello" in lower or "hi" in lower:
             return "Hello, sir. I am online and listening."
+        if "date" in lower or "what day is it" in lower or "today's date" in lower:
+            from datetime import datetime
+
+            now = datetime.now()
+            return f"Today is {now.strftime('%A, %d %B %Y')}, sir."
         if "time" in lower:
             from datetime import datetime
 
@@ -77,7 +104,7 @@ class ResponseGenerator:
     def generate(self, prompt: str, context: str = "") -> AIResult:
         """Generate a response from Groq, falling back to offline responses."""
         api_key = os.getenv("GROQ_API_KEY") or self.config.env("GROQ_API_KEY")
-        if not api_key or api_key.startswith("your_") or requests is None:
+        if not api_key or api_key.lower().startswith(("your_", "placeholder")) or requests is None:
             return AIResult(self.offline_response(prompt), provider="offline")
 
         system_prompt = self.config.get("ai.system_prompt")

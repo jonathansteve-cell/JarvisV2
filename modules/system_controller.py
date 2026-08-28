@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import os
 import platform
+import random
 import re
 import subprocess
 from typing import Any
@@ -15,12 +16,31 @@ try:
 except Exception:  # pragma: no cover
     psutil = None  # type: ignore
 
+BUILTIN_JOKES = [
+    "Why do programmers prefer dark mode? Because light attracts bugs, sir.",
+    "I told my computer I needed a break, and it said no problem, I will go to sleep.",
+    "Why did the developer go broke? Because he used up all his cache, sir.",
+    "There are only two hard things in computing: cache invalidation, naming things, and off-by-one errors.",
+    "I would tell you a UDP joke, but you might not get it, sir.",
+    "Why was the JavaScript developer sad? Because he did not node how to express himself.",
+    "A byte walked into a bar and ordered a bit. The bartender said, sorry, we do not serve halves.",
+]
+
 
 class SystemController:
     """Handle local system status and controls."""
 
     def __init__(self, config: Any) -> None:
         self.config = config
+
+    def tell_joke(self) -> str:
+        """Tell a joke via pyjokes when installed, with built-in fallbacks."""
+        try:
+            import pyjokes  # type: ignore
+
+            return pyjokes.get_joke()
+        except Exception:
+            return random.choice(BUILTIN_JOKES)
 
     def status(self) -> dict[str, Any]:
         if not psutil:
@@ -136,6 +156,8 @@ class SystemController:
 
     def process(self, command: str) -> dict[str, Any]:
         lower = command.lower()
+        if "joke" in lower:
+            return {"success": True, "response": self.tell_joke()}
         if any(term in lower for term in ["system status", "how's the system", "cpu", "battery", "memory"]):
             return {"success": True, "response": self.describe_status(), "data": self.status()}
         volume_match = re.search(r"volume (?:to )?(\d+)", lower)

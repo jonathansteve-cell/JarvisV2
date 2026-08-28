@@ -1,16 +1,22 @@
-"""Spotify music control."""
+"""Spotify music control with a local-library fallback."""
 
 from __future__ import annotations
 
 import os
+import platform
+import random
 import re
+import subprocess
 import urllib.parse
 import webbrowser
+from pathlib import Path
 from typing import Any
+
+MUSIC_EXTENSIONS = {".mp3", ".wav", ".m4a", ".ogg", ".flac", ".wma"}
 
 
 class SpotifyController:
-    """Control Spotify Web API when configured, with web fallback."""
+    """Control Spotify Web API when configured, with local/web fallbacks."""
 
     def __init__(self, config: Any) -> None:
         self.config = config
@@ -84,10 +90,40 @@ class SpotifyController:
                 return f"Spotify status failed: {exc}"
         return "Spotify API is not configured, sir."
 
+    def play_local(self, song_name: str = "") -> str:
+        """Play a random (or matching) track from the user's local Music folder."""
+        music_dir = Path(str(self.config.get("paths.music_dir", "~/Music"))).expanduser()
+        if not music_dir.exists():
+            return f"I could not find a Music folder at {music_dir}, sir."
+        songs = [path for path in music_dir.rglob("*") if path.suffix.lower() in MUSIC_EXTENSIONS]
+        if song_name:
+            songs = [path for path in songs if song_name.lower() in path.name.lower()]
+        if not songs:
+            return f"No matching songs found in {music_dir}, sir."
+        song = random.choice(songs)
+        try:
+            system = platform.system()
+            if system == "Windows":
+                os.startfile(song)  # type: ignore[attr-defined]
+            elif system == "Darwin":
+                subprocess.Popen(["open", str(song)])
+            else:
+                subprocess.Popen(["xdg-open", str(song)])
+            return f"Playing {song.stem} from your local library, sir."
+        except Exception:
+            return f"I found {song.stem}, but I could not open it on this machine, sir."
+
     def process(self, command: str) -> dict[str, Any]:
         lower = command.lower()
-        if "spotify" not in lower and not any(x in lower for x in ["play song", "pause music", "next song", "now playing"]):
+        if "spotify" not in lower and not any(
+            x in lower for x in ["play song", "play music", "pause music", "next song", "now playing"]
+        ):
             return {"success": False, "response": "I did not find a Spotify command, sir."}
+        if re.search(r"\bplay (?:some )?music\b", lower):
+            tail = re.sub(r".*?play (?:some )?music", "", command, count=1, flags=re.I).strip(" ,:;-")
+            if self._spotify():
+                return {"success": True, "response": self.play(tail)}
+            return {"success": True, "response": self.play_local(tail)}
         play_match = re.search(r"play(?: song| spotify)? (.+)", command, re.I)
         if play_match:
             return {"success": True, "response": self.play(play_match.group(1).strip())}

@@ -179,6 +179,12 @@ class MemoryController:
                 ),
                 "data": stats,
             }
+        rename = re.search(r"(?:your name is|change your name to|i will call you|i call you) ([\w .'-]+)", lower)
+        if rename:
+            name = rename.group(1).strip()
+            if name:
+                self.remember("assistant_name", name, "identity")
+                return {"success": True, "response": f"Very well, sir. You may call me {name.title()} from now on."}
         learned = self.learn_from_command(command)
         if learned:
             return {"success": True, "response": learned}

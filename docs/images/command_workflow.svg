@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 980 320" font-family="Consolas, monospace">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#0A0A0A"/>
+      <stop offset="1" stop-color="#120B04"/>
+    </linearGradient>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#FF8C1A"/>
+    </marker>
+  </defs>
+  <rect width="980" height="320" fill="url(#bg)"/>
+  <text x="490" y="34" text-anchor="middle" fill="#FF8C1A" font-size="18" font-weight="bold">J.A.R.V.I.S V2 · COMMAND WORKFLOW</text>
+
+  <!-- Stage 1: inputs -->
+  <rect x="20" y="70" width="150" height="190" rx="10" fill="#141414" stroke="#FF8C1A" stroke-width="1.5"/>
+  <text x="95" y="95" text-anchor="middle" fill="#FFB25E" font-size="13" font-weight="bold">INPUT</text>
+  <text x="95" y="130" text-anchor="middle" fill="#F5EDE0" font-size="12">Voice</text>
+  <text x="95" y="152" text-anchor="middle" fill="#F5EDE0" font-size="12">(wake word)</text>
+  <text x="95" y="185" text-anchor="middle" fill="#F5EDE0" font-size="12">Solar HUD</text>
+  <text x="95" y="218" text-anchor="middle" fill="#F5EDE0" font-size="12">CLI</text>
+  <text x="95" y="240" text-anchor="middle" fill="#9A8F7F" font-size="10">--command</text>
+
+  <!-- Stage 2: clean -->
+  <rect x="210" y="70" width="150" height="190" rx="10" fill="#141414" stroke="#FF8C1A" stroke-width="1.5"/>
+  <text x="285" y="95" text-anchor="middle" fill="#FFB25E" font-size="13" font-weight="bold">CLEAN</text>
+  <text x="285" y="130" text-anchor="middle" fill="#F5EDE0" font-size="12">strip wake word</text>
+  <text x="285" y="155" text-anchor="middle" fill="#F5EDE0" font-size="12">normalize text</text>
+  <text x="285" y="180" text-anchor="middle" fill="#F5EDE0" font-size="12">split chains</text>
+  <text x="285" y="205" text-anchor="middle" fill="#F5EDE0" font-size="12">(a then b then c)</text>
+
+  <!-- Stage 3: routing -->
+  <rect x="400" y="70" width="180" height="190" rx="10" fill="#141414" stroke="#FF8C1A" stroke-width="1.5"/>
+  <text x="490" y="95" text-anchor="middle" fill="#FFB25E" font-size="13" font-weight="bold">ROUTE</text>
+  <text x="490" y="126" text-anchor="middle" fill="#F5EDE0" font-size="12">1 · routines</text>
+  <text x="490" y="148" text-anchor="middle" fill="#F5EDE0" font-size="12">2 · 19 modules</text>
+  <text x="490" y="170" text-anchor="middle" fill="#F5EDE0" font-size="12">3 · memory learning</text>
+  <text x="490" y="192" text-anchor="middle" fill="#F5EDE0" font-size="12">4 · Groq AI</text>
+  <text x="490" y="214" text-anchor="middle" fill="#F5EDE0" font-size="12">5 · offline fallback</text>
+  <text x="490" y="243" text-anchor="middle" fill="#38E07C" font-size="10">first match wins</text>
+
+  <!-- Stage 4: modules -->
+  <rect x="620" y="70" width="160" height="190" rx="10" fill="#141414" stroke="#FF8C1A" stroke-width="1.5"/>
+  <text x="700" y="95" text-anchor="middle" fill="#FFB25E" font-size="13" font-weight="bold">EXECUTE</text>
+  <text x="700" y="122" text-anchor="middle" fill="#F5EDE0" font-size="11">system · apps · web</text>
+  <text x="700" y="142" text-anchor="middle" fill="#F5EDE0" font-size="11">roblox · spotify</text>
+  <text x="700" y="162" text-anchor="middle" fill="#F5EDE0" font-size="11">email · whatsapp</text>
+  <text x="700" y="182" text-anchor="middle" fill="#F5EDE0" font-size="11">files · windows</text>
+  <text x="700" y="202" text-anchor="middle" fill="#F5EDE0" font-size="11">+ 11 more</text>
+
+  <!-- Stage 5: response -->
+  <rect x="820" y="70" width="140" height="190" rx="10" fill="#141414" stroke="#FF8C1A" stroke-width="1.5"/>
+  <text x="890" y="95" text-anchor="middle" fill="#FFB25E" font-size="13" font-weight="bold">RESPOND</text>
+  <text x="890" y="130" text-anchor="middle" fill="#F5EDE0" font-size="12">speak (TTS)</text>
+  <text x="890" y="155" text-anchor="middle" fill="#F5EDE0" font-size="12">show in HUD</text>
+  <text x="890" y="180" text-anchor="middle" fill="#F5EDE0" font-size="12">log to memory</text>
+
+  <!-- arrows -->
+  <line x1="170" y1="165" x2="206" y2="165" stroke="#FF8C1A" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="360" y1="165" x2="396" y2="165" stroke="#FF8C1A" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="580" y1="165" x2="616" y2="165" stroke="#FF8C1A" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="780" y1="165" x2="816" y2="165" stroke="#FF8C1A" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- feedback loop -->
+  <path d="M 890 260 L 890 292 L 490 292 L 490 268" fill="none" stroke="#38E07C" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <text x="690" y="286" text-anchor="middle" fill="#38E07C" font-size="10">conversation + interaction history → SQLite memory</text>
+
+  <text x="490" y="312" text-anchor="middle" fill="#9A8F7F" font-size="10">failures in any module never crash the loop — errors are caught, reported, and spoken politely</text>
+</svg>

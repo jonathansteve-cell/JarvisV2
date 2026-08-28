@@ -127,7 +127,7 @@
 <main>
   <!-- ============ HOME — only the orb ============ -->
   <section class="view active" id="view-home">
-    <img id="orb" src="/hero_orb.png" alt="JARVIS core">
+    <canvas id="orb" width="820" height="820"></canvas>
   </section>
 
   <!-- ============ CHAT ============ -->
@@ -351,6 +351,101 @@ async function refresh(){
 }
 refresh(); setInterval(refresh,2000);
 try{ speechSynthesis.getVoices(); }catch(e){}
+</script>
+
+<script>
+/* ============ live coded orb: rotating 3D wireframe sun (pure code) ============ */
+(function(){
+const cv=document.getElementById("orb"), g=cv.getContext("2d");
+const TILT=0.42, F=3.4;
+let spin=0.9;
+function rng(seed){let s=seed>>>0;return function(){s=(s*1664525+1013904223)>>>0;return s/4294967296}}
+const rnd=rng(11);
+const rings=[];
+for(let lat=-75;lat<=75;lat+=15){const ring=[];const la=lat*Math.PI/180;
+  for(let l=0;l<360;l+=6){const ln=l*Math.PI/180;
+    ring.push([Math.cos(la)*Math.cos(ln),Math.sin(la),Math.cos(la)*Math.sin(ln)]);}
+  rings.push(ring);}
+for(let lon=0;lon<180;lon+=15){const ring=[];const lo=lon*Math.PI/180;
+  for(let a=0;a<360;a+=6){const aa=a*Math.PI/180;
+    ring.push([Math.cos(aa)*Math.cos(lo),Math.sin(aa),Math.cos(aa)*Math.sin(lo)]);}
+  rings.push(ring);}
+const spikes=[];
+for(let i=0;i<70;i++){const th=rnd()*Math.PI*2, ph=Math.acos(rnd()*2-1);
+  spikes.push({d:[Math.sin(ph)*Math.cos(th),Math.cos(ph),Math.sin(ph)*Math.sin(th)],L:1.2+rnd()*1.7,bright:rnd()<0.45});}
+const dust=[];
+for(let i=0;i<240;i++){const th=rnd()*Math.PI*2;
+  let rr=1.32+(rnd()+rnd()+rnd()-1.5)*0.30; rr=Math.max(1.04,Math.min(rr,2.1));
+  dust.push({th,rr,y0:(rnd()-0.5)*0.15,sp:0.001+rnd()*0.0035,sz:rnd()<0.22?1.8:1.2,bright:rnd()<0.22});}
+const arcs=[{R:1.38,extent:4.4,phase:0.6,wob:0.05,sp:0.0009},
+            {R:1.68,extent:3.8,phase:3.4,wob:-0.08,sp:-0.0007},
+            {R:1.92,extent:4.9,phase:5.2,wob:0.11,sp:0.0005}];
+const BACK=[70,32,7],MID=[165,80,10],FRONT=[255,158,58];
+function lerpC(c1,c2,t){return `rgb(${Math.round(c1[0]+(c2[0]-c1[0])*t)},${Math.round(c1[1]+(c2[1]-c1[1])*t)},${Math.round(c1[2]+(c2[2]-c1[2])*t)})`}
+function resize(){const s=Math.min(innerWidth*0.94,innerHeight*0.84,840);
+  cv.width=s;cv.height=s;cv.style.width=s+"px";cv.style.height=s+"px";}
+addEventListener("resize",resize);resize();
+function frame(){
+  const S=cv.width,cx=S/2,cy=S/2,pr=S*0.185;
+  spin+=0.0016;
+  g.clearRect(0,0,S,S);
+  const cs=Math.cos(spin),ss=Math.sin(spin),ct=Math.cos(TILT),st=Math.sin(TILT);
+  function proj(x,y,z){const x1=x*cs+z*ss,z1=-x*ss+z*cs;
+    const y2=y*ct-z1*st,z2=y*st+z1*ct;const s=F/(F+z2);
+    return [cx+x1*s*pr,cy-y2*s*pr,(z2+1)/2];}
+  const gr=g.createRadialGradient(cx,cy,0,cx,cy,pr*0.9);
+  gr.addColorStop(0,"rgba(255,214,140,0.95)");gr.addColorStop(0.12,"rgba(255,170,70,0.85)");
+  gr.addColorStop(0.28,"rgba(190,90,12,0.5)");gr.addColorStop(0.55,"rgba(90,40,6,0.25)");gr.addColorStop(1,"rgba(0,0,0,0)");
+  g.fillStyle=gr;g.beginPath();g.arc(cx,cy,pr*0.9,0,7);g.fill();
+  for(const ring of rings){
+    let prev=null;
+    for(let i=0;i<=ring.length;i++){
+      const p0=ring[i%ring.length];const p=proj(p0[0],p0[1],p0[2]);
+      if(prev){
+        const dep=(p[2]+prev[2])/2;
+        let col,w;
+        if(dep>0.55){col=lerpC([28,13,3],BACK,(dep-0.55)/0.45);w=1;}
+        else{const t=1-dep/0.55;col=lerpC(MID,FRONT,t);w=1;
+          g.strokeStyle="rgba(90,42,8,0.9)";g.lineWidth=3;
+          g.beginPath();g.moveTo(prev[0],prev[1]);g.lineTo(p[0],p[1]);g.stroke();}
+        g.strokeStyle=col;g.lineWidth=w;
+        g.beginPath();g.moveTo(prev[0],prev[1]);g.lineTo(p[0],p[1]);g.stroke();
+      }
+      prev=p;
+    }
+  }
+  for(const s of spikes){
+    const dx=s.d[0],dy=s.d[1],dz=s.d[2];
+    const a=proj(dx*0.98,dy*0.98,dz*0.98),b=proj(dx*s.L,dy*s.L,dz*s.L);
+    g.strokeStyle=s.bright?"rgba(255,158,58,0.9)":"rgba(200,100,20,0.8)";
+    g.lineWidth=1;g.beginPath();g.moveTo(a[0],a[1]);g.lineTo(b[0],b[1]);g.stroke();
+  }
+  for(const A of arcs){
+    A.phase+=A.sp;
+    let prev=null;const N=150;
+    for(let k=0;k<=N;k++){
+      const th=A.phase+k/N*A.extent;
+      const y=A.wob*Math.sin(th*2+A.R*5);
+      const p=proj(A.R*Math.cos(th),y,A.R*Math.sin(th));
+      if(prev){const dep=(p[2]+prev[2])/2;const fade=Math.abs(k/N-0.5)*2;
+        g.strokeStyle=lerpC([55,24,5],dep<0.5?FRONT:MID,1-fade*0.85);
+        g.lineWidth=dep<0.5?2:1;
+        g.beginPath();g.moveTo(prev[0],prev[1]);g.lineTo(p[0],p[1]);g.stroke();}
+      prev=p;}
+  }
+  for(const p0 of dust){
+    p0.th+=p0.sp;
+    const y=p0.y0+0.045*Math.sin(p0.th*2);
+    const p=proj(p0.rr*Math.cos(p0.th),y,p0.rr*Math.sin(p0.th));
+    g.fillStyle=p0.bright?"rgba(255,190,105,0.95)":"rgba(190,95,20,0.8)";
+    g.fillRect(p[0]-p0.sz/2,p[1]-p0.sz/2,p0.sz,p0.sz);
+  }
+  g.fillStyle="rgba(255,252,240,0.98)";
+  g.beginPath();g.arc(cx,cy,pr*0.05,0,7);g.fill();
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+})();
 </script>
 </body>
 </html>

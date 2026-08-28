@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 
 STATIC_DIR = Path(__file__).parent / "static"
 DEFAULT_PORT = 8765
+SERVER_START = __import__("time").time()
 
 
 class DashboardState:
@@ -78,6 +79,14 @@ class DashboardState:
         # Drive storage matrix: real files from local runtime folders.
         from utils.helpers import human_bytes
 
+        try:
+            import psutil as _psutil
+
+            _du = _psutil.disk_usage("/")
+            usage = f"{_du.used / (1 << 30):.1f} GB/{_du.total / (1 << 30):.1f} GB"
+        except Exception:
+            usage = None
+
         drive_files: list[dict[str, Any]] = []
         seen: set[str] = set()
         for path_key in ("paths.data_dir", "paths.log_dir", "paths.screenshot_dir"):
@@ -87,11 +96,15 @@ class DashboardState:
                     if file_path.is_file() and str(file_path) not in seen:
                         seen.add(str(file_path))
                         drive_files.append(
-                            {"name": str(file_path), "size": human_bytes(file_path.stat().st_size)}
+                            {
+                                "name": str(file_path),
+                                "size": human_bytes(file_path.stat().st_size),
+                                "modified": datetime.fromtimestamp(file_path.stat().st_mtime).strftime("%d/%m/%y %H:%M"),
+                            }
                         )
-                    if len(drive_files) >= 7:
+                    if len(drive_files) >= 6:
                         break
-            if len(drive_files) >= 7:
+            if len(drive_files) >= 6:
                 break
 
         return {
@@ -108,7 +121,14 @@ class DashboardState:
                 ],
             },
             "productivity": {
-                "tasks": [{"text": task["text"], "done": task.get("done", False)} for task in tasks],
+                "tasks": [
+                    {
+                        "text": task["text"],
+                        "done": task.get("done", False),
+                        "time": datetime.fromisoformat(task["created_at"]).strftime("%I:%M %p") if task.get("created_at") else "",
+                    }
+                    for task in tasks
+                ],
                 "notes": [{"text": note["text"]} for note in notes],
             },
             "roblox": {
@@ -119,13 +139,14 @@ class DashboardState:
             },
             "conversations": [
                 {
-                    "command": item["command"][:60],
+                    "command": item["command"][:52],
                     "response": item["response"][:80],
                     "time": item["created_at"][11:16] if len(item["created_at"]) > 15 else item["created_at"],
                 }
-                for item in jarvis.memory.recent_conversations(6)
+                for item in jarvis.memory.recent_conversations(7)
             ],
-            "drive": {"disk_percent": disk, "files": drive_files},
+            "drive": {"disk_percent": disk, "usage": usage, "files": drive_files},
+            "uptime": str(datetime.now() - datetime.fromtimestamp(SERVER_START)).split(".")[0],
         }
 
 

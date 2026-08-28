@@ -41,31 +41,18 @@ MUTED = "#9A8F7F"
 GREEN = "#38E07C"
 RED = "#E05555"
 
-PLACEHOLDER = "Type command or press Speak..."
 
 
 class SolarCoreCanvas(tk.Canvas):
-    """Hero core view: photoreal sun image with twinkling sparkle stars."""
+    """HOME hero: the photoreal orb on a pure black background — nothing else."""
 
-    def __init__(self, master: Any, width: int = 560, height: int = 400, **kwargs: Any) -> None:
+    def __init__(self, master: Any, width: int = 560, height: int = 420, **kwargs: Any) -> None:
         super().__init__(master, width=width, height=height, bg=BG, highlightthickness=0, **kwargs)
         self.size = width
-        self._phase = 0.0
-        self._running = True
         self._orb_photo = None
-        self._telemetry: list[tuple[str, str]] = []
-        self._stars = [
-            {
-                "x": random.uniform(8, width - 8),
-                "y": random.uniform(8, height - 30),
-                "size": random.uniform(1.2, 3.0),
-                "phase": random.uniform(0, math.tau),
-                "speed": random.uniform(0.4, 1.3),
-            }
-            for _ in range(46)
-        ]
         self._load_orb()
-        self._animate()
+        if self._orb_photo is not None:
+            self.create_image(width / 2, height / 2, image=self._orb_photo)
 
     def _load_orb(self) -> None:
         """Load the photoreal orb asset when available."""
@@ -85,39 +72,11 @@ class SolarCoreCanvas(tk.Canvas):
                 except Exception:
                     return
 
-    # ------------------------------------------------------------- telemetry
     def set_telemetry(self, lines: list[tuple[str, str]]) -> None:
-        """Store label/value pairs rendered beside the core (label, value)."""
-        self._telemetry = lines
+        """Kept for compatibility; HOME shows only the orb."""
 
     def stop(self) -> None:
-        self._running = False
-
-    # ------------------------------------------------------------ draw frame
-    def _animate(self) -> None:
-        if not self._running:
-            return
-        self.delete("all")
-        c = self.size / 2
-        mid_y = self.height / 2 - 8
-
-        # Photoreal orb image.
-        if self._orb_photo is not None:
-            self.create_image(c, mid_y, image=self._orb_photo)
-
-        # Twinkling four-point sparkle stars.
-        for star in self._stars:
-            twinkle = 0.25 + 0.75 * abs(math.sin(self._phase * star["speed"] + star["phase"]))
-            length = star["size"] * 2.6 * twinkle
-            color = "#FFE9C9" if twinkle > 0.72 else ORANGE_BRIGHT if twinkle > 0.4 else ORANGE_DEEP
-            x, y = star["x"], star["y"]
-            self.create_line(x - length, y, x + length, y, fill=color, width=1)
-            self.create_line(x, y - length, x, y + length, fill=color, width=1)
-
-        self.create_text(c, self.size - 14, text="CORE ACTIVE", fill="#38E07C", font=("Consolas", 11, "bold"))
-
-        self._phase += 0.05
-        self.after(80, self._animate)
+        pass
 
 
 class JarvisMainWindow:
@@ -139,11 +98,9 @@ class JarvisMainWindow:
 
         self._listening = False
         self._busy = False
-        self._entry_placeholder = False
 
         self._build_topbar()
         self._build_views()
-        self._build_console()
         self._show_view("home")
         self._update_telemetry()
 
@@ -203,12 +160,7 @@ class JarvisMainWindow:
         self.view_home = tk.Frame(self.container, bg=BG)
         self.view_home.grid(row=0, column=0, sticky="nsew")
         self.solar = SolarCoreCanvas(self.view_home, width=580, height=430)
-        self.solar.pack(expand=True, pady=(18, 4))
-        self._telemetry = {"cpu": "--", "mem": "--", "dsk": "--"}
-        self._telemetry_label = tk.Label(
-            self.view_home, text="", fg=ORANGE_SOFT, bg=BG, font=("Consolas", 11),
-        )
-        self._telemetry_label.pack(pady=(0, 10))
+        self.solar.pack(expand=True)
 
         # AI — chat transcript.
         self.view_ai = tk.Frame(self.container, bg=BG)
@@ -235,6 +187,28 @@ class JarvisMainWindow:
         self.chat.tag_config("jarvis", foreground=ORANGE)
         self.chat.tag_config("system", foreground=MUTED)
         self.chat.configure(state="disabled")
+
+        input_row = tk.Frame(self.view_ai, bg=BG)
+        input_row.grid(row=2, column=0, sticky="ew", padx=22, pady=(0, 16))
+        input_row.grid_columnconfigure(0, weight=1)
+        self.entry = tk.Entry(
+            input_row, bg="#120A03", fg=TEXT, insertbackground=ORANGE,
+            relief="flat", font=("Segoe UI", 12),
+        )
+        self.entry.grid(row=0, column=0, sticky="ew", ipady=9, padx=(4, 10))
+        self.entry.bind("<Return>", lambda _event: self.submit())
+        tk.Button(
+            input_row, text="SEND", command=self.submit, width=8,
+            bg="#1A0F04", fg=ORANGE_BRIGHT, activebackground="#2A1806",
+            activeforeground=TEXT, relief="flat", font=("Segoe UI", 10, "bold"),
+            cursor="hand2",
+        ).grid(row=0, column=1, padx=4, ipady=7)
+        tk.Button(
+            input_row, text="SPEAK", command=self.listen_once, width=8,
+            bg="#1A0F04", fg=ORANGE_BRIGHT, activebackground="#2A1806",
+            activeforeground=TEXT, relief="flat", font=("Segoe UI", 10, "bold"),
+            cursor="hand2",
+        ).grid(row=0, column=2, padx=4, ipady=7)
 
         # DASHBOARD — telemetry, Roblox safe-mode, quick actions.
         self.view_dashboard = tk.Frame(self.container, bg=BG)
@@ -304,51 +278,6 @@ class JarvisMainWindow:
         if view == "dashboard":
             self._refresh_roblox_panel()
 
-    # --------------------------------------------------------------- console
-    def _build_console(self) -> None:
-        console = tk.Frame(self.root, bg=PANEL, highlightbackground=PANEL_LINE, highlightthickness=1)
-        console.pack(fill="x", side="bottom")
-
-        inner = tk.Frame(console, bg=PANEL)
-        inner.pack(fill="x", padx=14, pady=10)
-        inner.grid_columnconfigure(0, weight=1)
-
-        self.entry = tk.Entry(
-            inner, bg="#120A03", fg=TEXT, insertbackground=ORANGE,
-            relief="flat", font=("Segoe UI", 12),
-        )
-        self.entry.grid(row=0, column=0, sticky="ew", ipady=9, padx=(4, 10))
-        self.entry.bind("<Return>", lambda _event: self.submit())
-        self.entry.bind("<FocusIn>", self._clear_placeholder)
-        self.entry.bind("<FocusOut>", self._set_placeholder)
-        self._set_placeholder()
-
-        for column, (text, handler) in enumerate([
-            ("SEND", self.submit),
-            ("SPEAK", self.listen_once),
-            ("ROBLOX", lambda: self.submit_text("roblox stats")),
-            ("GRIND", self.grind_action),
-        ]):
-            width = 8 if text in ("SEND", "SPEAK") else 9
-            tk.Button(
-                inner, text=text, command=handler, width=width,
-                bg="#1A0F04", fg=ORANGE_BRIGHT, activebackground="#2A1806",
-                activeforeground=TEXT, relief="flat", font=("Segoe UI", 10, "bold"),
-                cursor="hand2",
-            ).grid(row=0, column=column + 1, padx=4, ipady=7)
-
-    def _set_placeholder(self, _event: Any = None) -> None:
-        if not self.entry.get():
-            self.entry.insert(0, PLACEHOLDER)
-            self.entry.configure(fg=MUTED)
-            self._entry_placeholder = True
-
-    def _clear_placeholder(self, _event: Any = None) -> None:
-        if self._entry_placeholder:
-            self.entry.delete(0, "end")
-            self.entry.configure(fg=TEXT)
-            self._entry_placeholder = False
-
     # ------------------------------------------------------------------ chat
     def add_message(self, sender: str, message: str) -> None:
         self.chat.configure(state="normal")
@@ -365,7 +294,6 @@ class JarvisMainWindow:
 
     # ------------------------------------------------------------- processing
     def submit(self) -> None:
-        self._clear_placeholder()
         command = self.entry.get().strip()
         if not command or self._busy:
             return
@@ -392,13 +320,6 @@ class JarvisMainWindow:
         if getattr(result, "intent", "") == "roblox":
             self._refresh_roblox_panel()
 
-    def grind_action(self) -> None:
-        if self.jarvis.roblox.session:
-            self.submit_text("roblox stats")
-        else:
-            self.submit_text("start 30 minute roblox grind session for daily quests")
-
-    # ------------------------------------------------------------------ voice
     def listen_once(self) -> None:
         if self._listening or self._busy:
             return
@@ -439,10 +360,6 @@ class JarvisMainWindow:
         dsk = f"{stats['dsk']:.0f}%" if stats["dsk"] is not None else "N/A"
         battery = f"{stats['battery']:.0f}%" if stats["battery"] is not None else "AC"
 
-        self._telemetry_label.configure(
-            text=f"CPU {cpu}    MEM {mem}    DSK {dsk}    PWR {battery}"
-        )
-        self.solar.set_telemetry([("CPU", cpu), ("MEM", mem), ("DSK", dsk)])
         self._status_bar.configure(text=self._status_summary())
         self._draw_bars(stats)
         self.root.after(2000, self._update_telemetry)

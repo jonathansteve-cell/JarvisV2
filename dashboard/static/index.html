@@ -6,28 +6,26 @@
 <title>J.A.R.V.I.S V2</title>
 <style>
   :root{
-    --bg:#000; --card:rgba(20,10,2,.72); --line:rgba(255,140,26,.38); --line-soft:rgba(255,140,26,.16);
-    --orange:#FF8C1A; --bright:#FFB25E; --soft:#FFC773; --deep:#B4530A;
-    --text:#F5EDE0; --muted:#9A8F7F; --green:#38E07C; --red:#FF5555;
+    --bg:#000000;
+    --cyan:#19E6F2; --bright:#7FF3FF; --soft:#B8F7FF; --deep:#0E7C8A;
+    --card:rgba(6,28,40,.55); --line:rgba(25,230,242,.32); --line-soft:rgba(25,230,242,.14);
+    --text:#DFF9FF; --muted:#6E93A8; --green:#3AF07C; --red:#FF4D5E;
   }
   *{margin:0;padding:0;box-sizing:border-box}
-  html,body{background:#000;color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;height:100%}
+  html,body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;height:100%}
   body{display:flex;flex-direction:column;overflow:hidden}
   ::-webkit-scrollbar{width:7px;height:7px}
-  ::-webkit-scrollbar-thumb{background:#3A2408;border-radius:4px}
+  ::-webkit-scrollbar-thumb{background:#0E3A4C;border-radius:4px}
 
-  /* ---------- sparkle starfield ---------- */
-  #stars{position:fixed;inset:0;z-index:0;pointer-events:none}
-
-  /* ---------- top nav (photo style: centered icons) ---------- */
-  nav{position:relative;z-index:5;display:flex;justify-content:center;align-items:center;gap:44px;
-      padding:13px 20px 11px;background:rgba(0,0,0,.55);backdrop-filter:blur(6px);
-      border-bottom:1px solid rgba(255,140,26,.14)}
-  .nav-item{display:flex;align-items:center;gap:8px;font-size:13.5px;color:#EDE4D6;cursor:pointer;
-      padding:4px 10px;border-radius:6px;user-select:none;letter-spacing:.2px}
-  .nav-item .ico{font-size:12px;color:var(--orange)}
+  /* ---------- top nav ---------- */
+  nav{position:relative;z-index:5;display:flex;justify-content:center;align-items:center;gap:46px;
+      padding:14px 20px 12px;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);
+      border-bottom:1px solid rgba(25,230,242,.16)}
+  .nav-item{display:flex;align-items:center;gap:8px;font-size:13.5px;color:#DCEFF5;cursor:pointer;
+      padding:4px 10px;user-select:none;letter-spacing:.2px}
+  .nav-item .ico{font-size:12px;color:var(--cyan)}
   .nav-item:hover{color:#fff}
-  .nav-item.active{border-bottom:2px solid var(--orange);border-radius:0}
+  .nav-item.active{border-bottom:2px solid var(--cyan)}
   #top-status{position:absolute;right:20px;top:50%;transform:translateY(-50%);
       font-family:Consolas,monospace;font-size:10.5px;letter-spacing:1.5px;color:var(--muted)}
   #top-status b{color:var(--green);font-weight:400}
@@ -37,42 +35,38 @@
   .view{position:absolute;inset:0;display:none;overflow-y:auto}
   .view.active{display:block}
 
-  /* HOME — photoreal sun hero, exactly like the photo */
-  #view-home{display:none;align-items:center;justify-content:center}
-  #view-home.active{display:flex}
-  .hero{display:flex;flex-direction:column;align-items:center;justify-content:center;
-        height:100%;padding:8px 20px 96px}
-  #orb{max-width:min(72vh,760px);max-height:66vh;width:auto;filter:drop-shadow(0 0 60px rgba(255,110,20,.25));
-       animation:orbPulse 6s ease-in-out infinite}
-  @keyframes orbPulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.015);opacity:.96}}
-  .telemetry{margin-top:-8px;font-family:Consolas,monospace;font-size:16px;letter-spacing:2px;color:var(--orange)}
-  .core-chip{margin-top:10px;font-family:Consolas,monospace;font-size:10.5px;letter-spacing:2px;
-      color:var(--green);border:1px solid rgba(56,224,124,.55);border-radius:3px;padding:4px 12px;
-      background:rgba(6,20,10,.5)}
+  /* HOME — nothing but the orb on pure black */
+  #view-home{overflow:hidden}
+  #view-home.active{display:flex;align-items:center;justify-content:center}
+  #orb{max-width:min(78vh,820px);max-height:82vh;width:auto;filter:drop-shadow(0 0 70px rgba(255,110,20,.18));
+       animation:orbPulse 7s ease-in-out infinite}
+  @keyframes orbPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.012)}}
 
-  /* CHAT + DASHBOARD shared card style */
+  /* ---------- cyan panels ---------- */
   .panel{background:var(--card);border:1px solid var(--line);border-radius:10px;
-      backdrop-filter:blur(4px);box-shadow:inset 0 0 24px rgba(255,140,26,.05)}
-  .panel h3{font-family:Consolas,monospace;font-size:10.5px;letter-spacing:2.5px;color:var(--orange);
-      padding:10px 14px;border-bottom:1px solid var(--line-soft)}
+      backdrop-filter:blur(5px);box-shadow:inset 0 0 24px rgba(25,230,242,.05)}
+  .panel h3{font-family:Consolas,monospace;font-size:10.5px;letter-spacing:2.5px;color:var(--cyan);
+      padding:11px 14px;border-bottom:1px solid var(--line-soft)}
   .panel h3 em{float:right;font-style:normal;color:var(--muted);font-size:9.5px;letter-spacing:1px}
 
-  #view-chat.active{display:flex;flex-direction:column;padding:22px 26px 110px;gap:0}
-  #chatlog{flex:1;overflow-y:auto;font-size:13.5px;line-height:1.6;padding:16px}
-  #chatlog .u{color:var(--soft)} #chatlog .j{color:var(--orange)}
+  #view-chat.active{display:flex;flex-direction:column;padding:22px 26px;gap:0}
+  #chatlog{flex:1;overflow-y:auto;font-size:13.5px;line-height:1.6;padding:16px;min-height:200px}
+  #chatlog .u{color:var(--soft)} #chatlog .j{color:var(--cyan)}
   #chatlog .s{color:var(--muted);font-size:11px}
   #chatlog p{margin:7px 0}
   .chat-in{display:flex;gap:10px;padding:14px;border-top:1px solid var(--line-soft)}
-  input[type=text]{flex:1;background:rgba(255,140,26,.05);border:1px solid var(--line);border-radius:8px;
-      padding:12px 15px;color:var(--soft);font-size:14px;outline:none}
-  input[type=text]:focus{border-color:var(--orange);box-shadow:0 0 14px rgba(255,140,26,.25)}
+  input[type=text]{flex:1;background:rgba(25,230,242,.05);border:1px solid var(--line);border-radius:8px;
+      padding:12px 15px;color:var(--soft);font-size:14px;outline:none;font-family:Consolas,monospace}
+  input[type=text]:focus{border-color:var(--cyan);box-shadow:0 0 14px rgba(25,230,242,.25)}
   input::placeholder{color:var(--muted)}
-  button{background:rgba(30,15,3,.85);color:var(--bright);border:1px solid var(--line);border-radius:8px;
+  button{background:#0A2230;color:var(--bright);border:1px solid var(--line);border-radius:8px;
       padding:11px 18px;font-family:Consolas,monospace;font-weight:700;font-size:12px;letter-spacing:1px;
       cursor:pointer;transition:.15s}
-  button:hover{background:#331C06;color:#fff;box-shadow:0 0 14px rgba(255,140,26,.35)}
+  button:hover{background:#123A4C;color:#fff;box-shadow:0 0 14px rgba(25,230,242,.35)}
+  button.primary{background:var(--cyan);color:#03222B;border-color:var(--cyan)}
+  button.primary:hover{background:var(--bright)}
 
-  #view-dash.active{display:block;padding:22px 26px 110px}
+  #view-dash.active{display:block;padding:22px 26px}
   .dash-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:18px}
   .dash-grid .wide{grid-column:span 2}
   @media(max-width:780px){.dash-grid .wide{grid-column:span 1}}
@@ -80,7 +74,7 @@
   ul.list{list-style:none;font-size:12.5px;font-family:Consolas,monospace;padding:8px 14px}
   ul.list li{padding:7px 2px;border-bottom:1px dashed var(--line-soft);display:flex;gap:8px}
   ul.list li:last-child{border:none}
-  .dot{color:var(--orange)}
+  .dot{color:var(--cyan)}
   .empty{color:var(--muted);font-size:11.5px;font-style:italic;font-family:'Segoe UI',sans-serif;padding:10px 14px}
   .add-row{display:flex;gap:8px;padding:0 14px 14px}
   .add-row input{font-size:11.5px;padding:9px 11px}
@@ -104,8 +98,8 @@
   .file:last-child{border:none}
   .file .nm{color:var(--soft);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;direction:rtl;text-align:left}
   .file .sz{color:var(--green)}
-  .drive-bar{height:6px;background:rgba(255,140,26,.12);border-radius:3px;overflow:hidden;margin:10px 14px}
-  .drive-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--deep),var(--orange))}
+  .drive-bar{height:6px;background:rgba(25,230,242,.12);border-radius:3px;overflow:hidden;margin:10px 14px}
+  .drive-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--deep),var(--cyan))}
   .drive-line{display:flex;justify-content:space-between;font-family:Consolas,monospace;font-size:10px;
       color:var(--muted);padding:10px 14px 0}
 
@@ -119,17 +113,9 @@
 
   .qa{display:flex;flex-wrap:wrap;gap:8px;padding:12px 14px}
   .qa button{font-size:10px;padding:9px 11px}
-
-  /* ---------- bottom console (photo style) ---------- */
-  footer{position:relative;z-index:5;display:flex;gap:12px;padding:12px 16px;
-      background:rgba(8,4,0,.82);backdrop-filter:blur(8px);border-top:1px solid rgba(255,140,26,.22)}
-  footer input{font-size:14.5px;padding:13px 16px;border-radius:8px}
-  footer button{border-radius:8px;font-size:12.5px;padding:12px 20px}
 </style>
 </head>
 <body>
-
-<canvas id="stars"></canvas>
 
 <nav>
   <div class="nav-item active" data-view="home" onclick="showView('home')"><span class="ico">✦</span>Home</div>
@@ -139,13 +125,9 @@
 </nav>
 
 <main>
-  <!-- ============ HOME ============ -->
+  <!-- ============ HOME — only the orb ============ -->
   <section class="view active" id="view-home">
-    <div class="hero">
-      <img id="orb" src="/hero_orb.png" alt="JARVIS core">
-      <div class="telemetry" id="telemetry">CPU --%&nbsp;&nbsp;MEM --%&nbsp;&nbsp;DSK --%&nbsp;&nbsp;PWR --</div>
-      <div class="core-chip">CORE ACTIVE</div>
-    </div>
+    <img id="orb" src="/hero_orb.png" alt="JARVIS core">
   </section>
 
   <!-- ============ CHAT ============ -->
@@ -154,14 +136,14 @@
       <h3>CHAT SECTION <em id="provider">offline persona</em></h3>
       <div id="chatlog"></div>
       <div class="chat-in">
-        <input type="text" id="chatin" placeholder="Type command or press Speak..." autocomplete="off">
-        <button style="background:var(--orange);color:#1A0D00;border-color:var(--orange)" onclick="sendChat()">SEND</button>
+        <input type="text" id="chatin" placeholder="Type a command…" autocomplete="off">
+        <button class="primary" onclick="sendChat()">SEND</button>
         <button onclick="voiceInput()">🎙 SPEAK</button>
       </div>
     </div>
   </section>
 
-  <!-- ============ DASHBOARD ============ -->
+  <!-- ============ DASHBOARD (cyan) ============ -->
   <section class="view" id="view-dash">
     <div class="dash-grid">
 
@@ -237,7 +219,7 @@
           <button onclick="quick('what can you do')">CAPABILITIES</button>
         </div>
         <div class="qa" style="padding-top:0">
-          <button id="tts-toggle" style="background:var(--orange);color:#1A0D00;border-color:var(--orange)" onclick="toggleTTS()">TTS: ON</button>
+          <button id="tts-toggle" class="primary" onclick="toggleTTS()">TTS: ON</button>
           <button onclick="speakText('All systems operational, sir. No need to worry.')">TEST VOICE</button>
         </div>
       </div>
@@ -246,46 +228,7 @@
   </section>
 </main>
 
-<footer>
-  <input type="text" id="console-in" placeholder="Type command or press Speak..." autocomplete="off">
-  <button style="background:var(--orange);color:#1A0D00;border-color:var(--orange)" onclick="sendConsole()">SEND</button>
-  <button onclick="voiceInput()">SPEAK</button>
-  <button onclick="quick('roblox stats')">ROBLOX</button>
-  <button onclick="quick('start 30 minute roblox grind session for daily quests')">GRIND</button>
-</footer>
-
 <script>
-/* ============ twinkling sparkle starfield (photo effect) ============ */
-const sc = document.getElementById("stars"), sx = sc.getContext("2d");
-let stars = [];
-function initStars(){
-  sc.width = innerWidth; sc.height = innerHeight;
-  stars = Array.from({length:110},()=>({
-    x:Math.random()*sc.width, y:Math.random()*sc.height,
-    s:.6+Math.random()*1.7, ph:Math.random()*Math.PI*2,
-    sp:.4+Math.random()*1.2, cross:Math.random()<.45
-  }));
-}
-function drawStars(t){
-  sx.clearRect(0,0,sc.width,sc.height);
-  stars.forEach(st=>{
-    const tw=.25+.75*Math.abs(Math.sin(t/900*st.sp+st.ph));
-    sx.globalAlpha=tw*.9;
-    sx.fillStyle=tw>.75?"#FFE9C9":"#FF9C3A";
-    if(st.cross){
-      const l=st.s*3.2;
-      sx.save();sx.translate(st.x,st.y);
-      sx.fillRect(-l,-st.s/2,l*2,st.s);sx.fillRect(-st.s/2,-l,st.s,l*2);
-      sx.restore();
-    }else{
-      sx.beginPath();sx.arc(st.x,st.y,st.s,0,7);sx.fill();
-    }
-  });
-  sx.globalAlpha=1;
-  requestAnimationFrame(drawStars);
-}
-initStars(); addEventListener("resize",initStars); requestAnimationFrame(drawStars);
-
 /* ============ views ============ */
 function showView(v){
   document.querySelectorAll(".view").forEach(el=>el.classList.remove("active"));
@@ -319,12 +262,10 @@ async function runCommand(cmd){
     if(TTS_ON && r.text) speakText(r.text);
   }catch(e){ $("chatlog").lastChild.remove(); addChat("s","SYSTEM","Connection error."); }
 }
-function sendChat(){ const c=$("chatin").value.trim(); if(!c)return; $("chatin").value=""; showView("chat"); runCommand(c); }
+function sendChat(){ const c=$("chatin").value.trim(); if(!c)return; $("chatin").value=""; runCommand(c); }
 function quick(cmd){ showView("chat"); runCommand(cmd); }
-function sendConsole(){ const i=$("console-in"),c=i.value.trim(); if(!c)return; i.value=""; showView("chat"); runCommand(c); }
 function addFromInput(inputId,prefix){ const i=$(inputId),v=i.value.trim(); if(!v)return; i.value=""; runCommand(prefix+" "+v); }
 $("chatin").addEventListener("keydown",e=>{if(e.key==="Enter")sendChat()});
-$("console-in").addEventListener("keydown",e=>{if(e.key==="Enter")sendConsole()});
 $("task-in").addEventListener("keydown",e=>{if(e.key==="Enter")addFromInput("task-in","add task:")});
 $("note-in").addEventListener("keydown",e=>{if(e.key==="Enter")addFromInput("note-in","take note:")});
 
@@ -359,10 +300,10 @@ function voiceInput(){
 /* ============ gauges ============ */
 function gauge(id,label,pct){
   const el=$(id), r=34, circ=2*Math.PI*r;
-  const col=pct==null?"#9A8F7F":pct<60?"#38E07C":pct<85?"#FF8C1A":"#FF5555";
+  const col=pct==null?"#6E93A8":pct<60?"#3AF07C":pct<85?"#19E6F2":"#FF4D5E";
   const v=pct==null?"N/A":Math.round(pct)+"%";
   el.innerHTML=`<svg width="90" height="90">
-    <circle cx="45" cy="45" r="${r}" stroke="rgba(255,140,26,.15)" stroke-width="7" fill="none"/>
+    <circle cx="45" cy="45" r="${r}" stroke="rgba(25,230,242,.14)" stroke-width="7" fill="none"/>
     <circle cx="45" cy="45" r="${r}" stroke="${col}" stroke-width="7" fill="none"
       stroke-linecap="round" stroke-dasharray="${circ}" stroke-dashoffset="${circ*(1-(pct||0)/100)}"
       style="transition:stroke-dashoffset .8s,stroke .4s;filter:drop-shadow(0 0 4px ${col})"/></svg>
@@ -370,13 +311,11 @@ function gauge(id,label,pct){
 }
 function esc(s){const d=document.createElement("div");d.textContent=s;return d.innerHTML}
 
-/* ============ polling ============ */
+/* ============ polling (dashboard widgets only) ============ */
 function fmt(n){return n==null?"—":Math.round(n).toString()}
 async function refresh(){
   try{
     const s=await api("/api/state");
-    $("telemetry").innerHTML=
-      `CPU ${fmt(s.system.cpu)}%&nbsp;&nbsp;MEM ${fmt(s.system.mem)}%&nbsp;&nbsp;DSK ${fmt(s.system.disk)}%&nbsp;&nbsp;PWR ${s.system.battery!=null?fmt(s.system.battery)+"%":"AC"}`;
     gauge("g-cpu","CPU",s.system.cpu); gauge("g-mem","MEMORY",s.system.mem); gauge("g-dsk","DISK",s.system.disk);
     $("battery").textContent="POWER "+(s.system.battery!=null?Math.round(s.system.battery)+"% BATTERY":"AC / DESKTOP");
     const st=$("top-status");
@@ -387,7 +326,7 @@ async function refresh(){
     const L=(id,items,empty)=>{ $(id).innerHTML=items.length?items:`<li class="empty">${empty}</li>`; };
     L("tasks", s.productivity.tasks.map(t=>`<li><span class="dot">[ ]</span>${esc(t.text)}</li>`).join(""),"No open tasks. Add one ↓");
     L("notes", s.productivity.notes.map(n=>`<li><span class="dot">✦</span>${esc(n.text)}</li>`).join(""),"No notes yet. Add one ↓");
-    L("facts", s.memory.facts.map(f=>`<li><span class="dot">◆</span><b style="color:var(--orange);font-weight:400">${esc(f.key.replace(/_/g," "))}</b>&nbsp;— ${esc(f.value)}</li>`).join(""),"No memories yet. Try: remember favorite color is blue");
+    L("facts", s.memory.facts.map(f=>`<li><span class="dot">◆</span><b style="color:var(--cyan);font-weight:400">${esc(f.key.replace(/_/g," "))}</b>&nbsp;— ${esc(f.value)}</li>`).join(""),"No memories yet. Try: remember favorite color is blue");
     if(s.conversations && s.conversations.length){
       $("inbox").innerHTML=s.conversations.slice().reverse().map(c=>
         `<div class="mail"><span class="when">${esc(c.time)}</span><span class="what" title="${esc(c.response)}">${esc(c.command)}</span><span class="when">▶</span></div>`).join("");

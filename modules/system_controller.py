@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import os
 import platform
 import random
 import re
@@ -72,6 +71,23 @@ class SystemController:
             f"CPU is at {status['cpu_percent']} percent, memory at {status['memory_percent']} percent, "
             f"and disk usage at {status['disk_percent']} percent.{battery}"
         )
+
+    def describe_battery(self) -> str:
+        """Answer battery questions directly instead of the full status line."""
+        if not psutil or not hasattr(psutil, "sensors_battery"):
+            return "Battery reporting needs psutil on this machine, sir."
+        try:
+            battery = psutil.sensors_battery()
+        except Exception:
+            battery = None
+        if not battery:
+            return "This machine reports no battery - it is running on mains power, sir."
+        state = "charging" if battery.power_plugged else "on battery power"
+        remaining = ""
+        seconds = getattr(battery, "secsleft", None)
+        if not battery.power_plugged and isinstance(seconds, (int, float)) and seconds > 0:
+            remaining = f" Roughly {int(seconds // 3600)} hours {int((seconds % 3600) // 60)} minutes left."
+        return f"Battery is at {battery.percent} percent and {state}, sir.{remaining}"
 
     def _run_power_command(self, action: str) -> str:
         confirm = self.config.get("behavior.confirm_dangerous_actions", True)
@@ -158,7 +174,9 @@ class SystemController:
         lower = command.lower()
         if "joke" in lower:
             return {"success": True, "response": self.tell_joke()}
-        if any(term in lower for term in ["system status", "how's the system", "cpu", "battery", "memory"]):
+        if any(term in lower for term in ["battery", "charge", "charger", "power level", "juice left"]):
+            return {"success": True, "response": self.describe_battery(), "data": self.status()}
+        if any(term in lower for term in ["system status", "how's the system", "cpu", "memory"]):
             return {"success": True, "response": self.describe_status(), "data": self.status()}
         volume_match = re.search(r"volume (?:to )?(\d+)", lower)
         if volume_match:

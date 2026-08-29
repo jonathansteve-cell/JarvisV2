@@ -8,6 +8,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Any
 
+from utils.helpers import parse_delay
+
 
 class CalendarController:
     """Manage a local calendar; ready for Google Calendar credentials if added later."""
@@ -28,16 +30,40 @@ class CalendarController:
         self.path.write_text(json.dumps(self.events, indent=2), encoding="utf-8")
 
     def add_event(self, title: str, when: str = "today") -> str:
-        start = datetime.now() + timedelta(hours=1)
-        self.events.append({"title": title.strip(), "when": when, "start": start.isoformat(), "created_at": datetime.now().isoformat()})
+        # Use the time the user actually said; only default to "an hour from now"
+        # when nothing in the phrase is parseable.
+        start = parse_delay(when) or parse_delay(title)
+        parsed = start is not None
+        start = start or (datetime.now() + timedelta(hours=1))
+        self.events.append(
+            {
+                "title": title.strip(),
+                "when": when,
+                "start": start.isoformat(),
+                "created_at": datetime.now().isoformat(),
+            }
+        )
         self._save()
-        return f"Calendar event added: {title.strip()}, sir."
+        if parsed:
+            return f"Calendar event added: {title.strip()} at {start.strftime('%Y-%m-%d %I:%M %p')}, sir."
+        return (
+            f"Calendar event added: {title.strip()}. I could not read a time from that, "
+            f"sir, so I filed it an hour from now — say 'at 6pm' or 'tomorrow' to be precise."
+        )
 
     def list_events(self) -> str:
         if not self.events:
             return "Your local calendar has no events, sir."
-        upcoming = self.events[-8:]
-        return "Upcoming calendar items: " + "; ".join(item["title"] for item in upcoming)
+        upcoming = sorted(self.events, key=lambda item: item.get("start", ""))[-8:]
+        parts = []
+        for item in upcoming:
+            start = item.get("start")
+            try:
+                when = datetime.fromisoformat(start).strftime("%b %d %I:%M %p")
+            except (TypeError, ValueError):
+                when = "unscheduled"
+            parts.append(f"{item['title']} ({when})")
+        return "Upcoming calendar items: " + "; ".join(parts)
 
     def process(self, command: str) -> dict[str, Any]:
         lower = command.lower()

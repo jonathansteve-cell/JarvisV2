@@ -27,6 +27,10 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "tts_enabled": True,
         "voice_profile": "dark_synthetic",
         "prefer_voice_gender": "male",
+        # auto | edge | pyttsx3 | system  (edge = Microsoft neural voices, needs edge-tts)
+        "tts_engine": os.getenv("JARVIS_TTS_ENGINE", "auto"),
+        # Empty means "derive from the voice profile". e.g. en-US-GuyNeural, en-GB-RyanNeural.
+        "edge_voice": os.getenv("JARVIS_EDGE_VOICE", ""),
     },
     "ai": {
         "provider": "groq",
@@ -76,6 +80,9 @@ DEFAULT_CONFIG: dict[str, Any] = {
             "smtp_host": os.getenv("JARVIS_SMTP_HOST", "smtp.gmail.com"),
             "smtp_port": int(os.getenv("JARVIS_SMTP_PORT", "587")),
             "imap_host": os.getenv("JARVIS_IMAP_HOST", "imap.gmail.com"),
+        },
+        "phone": {
+            "twiml_url": os.getenv("TWILIO_TWIML_URL", ""),
         },
         "wake_on_lan": {
             "mac_address": os.getenv("JARVIS_TARGET_PC_MAC", ""),

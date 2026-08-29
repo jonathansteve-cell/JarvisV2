@@ -6,6 +6,8 @@ Run:
   python main.py --web       # web dashboard explicitly
   python main.py --voice-only # pure voice assistant
   python main.py --command "system status" # one command
+  python main.py --check      # self-diagnostic report, non-zero exit on failure
+  python main.py --check --verbose # include the passing checks too
 """
 
 from __future__ import annotations
@@ -26,7 +28,20 @@ def run_command(command: str) -> int:
     jarvis = Jarvis()
     result = jarvis.process_command(command, speak=False)
     print(result.text)
-    return 0 if result.success else 1
+    if not result.success:
+        return 1
+    # A module can handle a command and still fail to perform it (e.g. the app
+    # was never installed). Surface that to the shell.
+    data = result.data if isinstance(result.data, dict) else {}
+    if data.get("launched") is False:
+        return 1
+    return 0
+
+
+def run_check(verbose: bool) -> int:
+    from utils.health_check import run_health_check
+
+    return run_health_check(verbose=verbose)
 
 
 def run_voice_only() -> int:
@@ -83,8 +98,12 @@ def main() -> int:
     parser.add_argument("--web", action="store_true", help="Run the web dashboard explicitly (default)")
     parser.add_argument("--port", type=int, default=8765, help="Port for the web dashboard")
     parser.add_argument("--command", help="Run a single text command and exit")
+    parser.add_argument("--check", action="store_true", help="Run the self-diagnostic report and exit")
+    parser.add_argument("--verbose", action="store_true", help="With --check, also print the checks that passed")
     args = parser.parse_args()
 
+    if args.check:
+        return run_check(args.verbose)
     if args.command:
         return run_command(args.command)
     if args.voice_only:

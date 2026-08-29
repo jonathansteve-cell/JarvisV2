@@ -36,23 +36,79 @@ def human_bytes(value: int | float) -> str:
     return f"{value:.1f} TB"
 
 
-def parse_delay(text: str) -> datetime | None:
-    """Parse small natural-language delay phrases like 'in 10 minutes'."""
-    now = datetime.now()
-    match = re.search(r"in (\d+)\s*(second|seconds|minute|minutes|hour|hours|day|days)", text)
-    if not match:
+_RELATIVE_RE = re.compile(
+    r"\bin (\d+)\s*(second|seconds|minute|minutes|hour|hours|day|days|week|weeks)\b"
+)
+_CLOCK_RE = re.compile(r"\bat (\d{1,2})(?::(\d{2}))?\s*(a\.?m\.?|p\.?m\.?)?\b")
+
+
+def parse_delay(text: str, now: datetime | None = None) -> datetime | None:
+    """Parse natural-language times into an absolute datetime.
+
+    Understands relative phrases ("in 10 minutes", "in 2 days"), clock times
+    ("at 6pm", "at 18:30", "at 6:30 pm"), and "tomorrow" with or without a time.
+
+    A bare hour with no am/pm is read as an evening time when it is 1-7
+    ("remind me at 6" means 6pm) and taken literally for 8-23.
+    """
+    now = now or datetime.now()
+    lower = text.lower()
+
+    relative = _RELATIVE_RE.search(lower)
+    if relative:
+        amount = int(relative.group(1))
+        unit = relative.group(2)
+        if unit.startswith("second"):
+            return now + timedelta(seconds=amount)
+        if unit.startswith("minute"):
+            return now + timedelta(minutes=amount)
+        if unit.startswith("hour"):
+            return now + timedelta(hours=amount)
+        if unit.startswith("day"):
+            return now + timedelta(days=amount)
+        if unit.startswith("week"):
+            return now + timedelta(weeks=amount)
         return None
-    amount = int(match.group(1))
-    unit = match.group(2)
-    if unit.startswith("second"):
-        return now + timedelta(seconds=amount)
-    if unit.startswith("minute"):
-        return now + timedelta(minutes=amount)
-    if unit.startswith("hour"):
-        return now + timedelta(hours=amount)
-    if unit.startswith("day"):
-        return now + timedelta(days=amount)
+
+    clock = _CLOCK_RE.search(lower)
+    if clock:
+        hour = int(clock.group(1))
+        minute = int(clock.group(2) or 0)
+        meridiem = (clock.group(3) or "").replace(".", "")
+        if meridiem == "pm" and hour < 12:
+            hour += 12
+        elif meridiem == "am" and hour == 12:
+            hour = 0
+        elif not meridiem and 1 <= hour <= 7:
+            hour += 12
+        if hour > 23 or minute > 59:
+            return None
+        tomorrow = "tomorrow" in lower or "tmrw" in lower
+        base = now + timedelta(days=1) if tomorrow else now
+        target = base.replace(hour=hour, minute=minute, second=0, microsecond=0)
+        # A time already gone today means the same time tomorrow.
+        if not tomorrow and target <= now:
+            target += timedelta(days=1)
+        return target
+
+    if "tomorrow" in lower or "tmrw" in lower:
+        return (now + timedelta(days=1)).replace(hour=9, minute=0, second=0, microsecond=0)
     return None
+
+
+#: Values that mean "the template text was never replaced".
+PLACEHOLDER_PREFIXES = ("your_", "placeholder", "changeme", "xxx", "insert_", "todo")
+
+
+def is_placeholder_secret(value: str | None) -> bool:
+    """True when a credential is missing or still holds the shipped template text.
+
+    Without this, a fresh ``.env`` counts as "configured" and integrations claim
+    to be live while every call fails.
+    """
+    if not value or not value.strip():
+        return True
+    return value.strip().lower().startswith(PLACEHOLDER_PREFIXES)
 
 
 def safe_filename(name: str, default: str = "jarvis_file") -> str:

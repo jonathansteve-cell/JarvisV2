@@ -240,7 +240,19 @@ GROQ_API_KEY=your_real_groq_api_key
 GROQ_MODEL=llama-3.3-70b-versatile
 ```
 
-3. Test it:
+3. Verify the whole install in one shot:
+
+```bash
+python main.py --check
+```
+
+`--check` prints a colour-coded report of everything Jarvis depends on — Python,
+`.env`, the Groq key (never printed, only classified), a live `api.groq.com`
+probe, the speech engine, the microphone, imports and writable folders — and
+exits non-zero if anything is broken. Add `--verbose` to also list the checks
+that passed.
+
+4. Then test the brain:
 
 ```bash
 python main.py --command "explain what you can do"
@@ -250,6 +262,22 @@ python main.py --command "explain what you can do"
 commit**. If you ever paste a key into a chat or screenshot, revoke it at
 console.groq.com immediately.
 
+## Voice engine
+
+| Engine | Config value | Quality | Needs |
+| --- | --- | --- | --- |
+| **Edge neural** | `voice.tts_engine: edge` | Natural, human-like | `pip install edge-tts`, internet, an mp3 player |
+| pyttsx3 / SAPI5 | `voice.tts_engine: pyttsx3` | Robotic but offline | nothing on Windows (eSpeak on Linux) |
+| OS command | `voice.tts_engine: system` | Basic | `say` (macOS) / `espeak` (Linux) |
+| auto (default) | `voice.tts_engine: auto` | Best available | — |
+
+`auto` prefers Edge neural voices when `edge-tts` is installed and silently falls
+back to the offline engine if the network or an mp3 player is missing. Pick the
+voice with `voice.edge_voice` (for example `en-US-GuyNeural`,
+`en-GB-RyanNeural`, `en-IN-PrabhatNeural`); leaving it empty derives one from the
+active voice profile. On Windows, mp3 playback uses the built-in Media Player, so
+no extra install is needed; on Linux install `mpv` or `ffmpeg` (`ffplay`).
+
 ## Run modes
 
 | Mode | Command | What happens |
@@ -258,6 +286,7 @@ console.groq.com immediately.
 | **Web Dashboard** | `python main.py --web` | Spark-style browser dashboard at `localhost:8765` |
 | **Voice only** | `python main.py --voice-only` | No window; pure microphone loop |
 | **One command** | `python main.py --command "system status"` | Execute and print, then exit |
+| **Self-check** | `python main.py --check` | Dependency report; non-zero exit if something is broken |
 
 ## Command cookbook
 
@@ -300,10 +329,13 @@ Hey Jarvis, maximize window
 Hey Jarvis, snap window left
 ```
 
-> **App not on PATH?** Jarvis already checks Program Files, `%LOCALAPPDATA%`,
-> macOS `/Applications` names, and Windows' App Paths registry automatically.
-> If an app still won't launch, tell it exactly where the executable lives in
-> `config/config.json`:
+> **App not on PATH?** Jarvis now opens *any* installed app, not just the ones it
+> has memorised. Filler words are ignored ("open up the chrome browser please"
+> resolves to `chrome`), and when the name is unknown it falls back to a fuzzy
+> search of the Windows **App Paths registry** and **Start Menu shortcuts**,
+> macOS `/Applications` bundles, or Linux `.desktop` launchers — plus a bounded
+> scan of the usual install folders. If an app still won't launch, tell it
+> exactly where the executable lives in `config/config.json`:
 >
 > ```json
 > "applications": {

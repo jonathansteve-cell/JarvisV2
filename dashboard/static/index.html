@@ -17,16 +17,20 @@
   ::-webkit-scrollbar{width:7px;height:7px}
   ::-webkit-scrollbar-thumb{background:#0E3A4C;border-radius:4px}
 
-  /* ---------- global nav ---------- */
-  nav{position:relative;z-index:5;display:flex;justify-content:center;align-items:center;gap:46px;
-      padding:12px 20px 10px;background:rgba(2,10,16,.85);border-bottom:1px solid var(--line-soft)}
-  .nav-item{display:flex;align-items:center;gap:8px;font-size:13.5px;color:#DCEFF5;cursor:pointer;
-      padding:4px 10px;user-select:none}
-  .nav-item .ico{font-size:12px;color:var(--cyan)}
-  .nav-item:hover{color:#fff}
-  .nav-item.active{border-bottom:2px solid var(--cyan)}
-  #telemetry-tag{position:absolute;right:18px;top:6px;font-family:Consolas,monospace;font-size:9px;
-      letter-spacing:2px;color:var(--muted)}
+  /* ---------- global nav : exactly three buttons ---------- */
+  nav{position:relative;z-index:5;display:flex;justify-content:center;align-items:center;gap:14px;
+      padding:12px 20px 12px;background:rgba(2,10,16,.85);border-bottom:1px solid var(--line-soft)}
+  .nav-btn{display:flex;align-items:center;gap:8px;font-size:13px;color:#DCEFF5;cursor:pointer;
+      padding:9px 26px;user-select:none;background:rgba(25,230,242,.05);border:1px solid var(--line);
+      border-radius:6px;font-family:Consolas,monospace;font-weight:700;letter-spacing:2px;transition:.15s}
+  .nav-btn .ico{font-size:12px;color:var(--cyan)}
+  .nav-btn:hover{color:#fff;box-shadow:0 0 14px rgba(25,230,242,.3);background:#0A2230}
+  .nav-btn.active{background:var(--cyan);color:#03210F;border-color:var(--cyan);
+      box-shadow:0 0 18px rgba(25,230,242,.5)}
+  .nav-btn.active .ico{color:#03210F}
+  .nav-right{position:absolute;right:18px;top:50%;transform:translateY(-50%);display:flex;gap:14px;
+      align-items:center}
+  #telemetry-tag{font-family:Consolas,monospace;font-size:9px;letter-spacing:2px;color:var(--muted)}
 
   /* ---------- views ---------- */
   main{position:relative;z-index:2;flex:1;overflow:hidden}
@@ -80,6 +84,7 @@
   .panel h3 em{float:right;font-style:normal;color:var(--muted);font-size:9.5px;letter-spacing:1px}
 
   #facescan,#neural{display:block;margin:2px auto 8px}
+  #facescan{width:220px;height:260px}
   .brain-label{font-family:Consolas,monospace;text-align:center;font-size:14px;letter-spacing:2px;
       color:var(--text);margin:2px 0 8px}
   .ready{font-family:Consolas,monospace;font-size:30px;color:var(--green);letter-spacing:4px;text-align:center;
@@ -147,25 +152,19 @@
 <body>
 
 <nav>
-  <div class="nav-item active" data-view="home" onclick="showView('home')"><span class="ico">✦</span>Home</div>
-  <div class="nav-item" data-view="chat" onclick="showView('chat')"><span class="ico">🗨</span>Chat</div>
-  <div class="nav-item" data-view="dash" onclick="showView('dash')"><span class="ico">▦</span>Dashboard</div>
-  <span class="nav-item" id="mic-chip" style="color:var(--green);font-family:Consolas,monospace;font-size:11.5px" onclick="toggleMic()">🎙 MIC: starting…</span>
-  <span id="telemetry-tag">TELEMETRY ▾</span>
+  <button class="nav-btn active" data-view="home" onclick="showView('home')"><span class="ico">✦</span>HOME</button>
+  <button class="nav-btn" data-view="chat" onclick="showView('chat')"><span class="ico">🗨</span>CHAT</button>
+  <button class="nav-btn" data-view="dash" onclick="showView('dash')"><span class="ico">▦</span>DASHBOARD</button>
+  <span class="nav-right">
+    <span id="mic-chip" style="color:var(--green);font-family:Consolas,monospace;font-size:11.5px;cursor:pointer" onclick="toggleMic()">🎙 MIC: starting…</span>
+    <span id="telemetry-tag">TELEMETRY ▾</span>
+  </span>
 </nav>
 
 <main>
   <!-- ================= HOME : orb + live answers ================= -->
   <section class="view active" id="view-home">
     <canvas id="orb" width="620" height="620"></canvas>
-    <div class="home-chat">
-      <div id="home-log"></div>
-      <div class="home-in">
-        <input type="text" id="home-in" placeholder="Ask JARVIS anything… press Enter" autocomplete="off">
-        <button class="green" onclick="sendFrom('home-in')">SEND</button>
-        <button onclick="voiceInput()">🎙 SPEAK</button>
-      </div>
-    </div>
   </section>
 
   <!-- ================= CHAT ================= -->
@@ -193,7 +192,7 @@
       <div class="col">
         <div class="panel" style="flex:1">
           <h3 style="text-align:center">FACE SCAN</h3>
-          <canvas id="facescan" width="196" height="216"></canvas>
+          <canvas id="facescan" width="220" height="260"></canvas>
           <div class="brain-label">AI BRAIN</div>
           <canvas id="neural" width="196" height="150"></canvas>
           <div class="brain-label">AI BRAIN</div>
@@ -327,7 +326,7 @@ function addFromInput(inputId,prefix){ const i=$(inputId),v=i.value.trim(); if(!
 function showView(v){
   document.querySelectorAll(".view").forEach(el=>el.classList.remove("active"));
   $("view-"+v).classList.add("active");
-  document.querySelectorAll(".nav-item").forEach(n=>n.classList.toggle("active",n.dataset.view===v));
+  document.querySelectorAll(".nav-item,.nav-btn").forEach(n=>n.classList.toggle("active",n.dataset.view===v));
 }
 
 /* ================= voice ================= */
@@ -433,139 +432,99 @@ function frame(){
 requestAnimationFrame(frame);
 })();
 
-/* ================= face scan (realistic shaded 3D head) ================= */
+/* ================= face scan (clear holographic JARVIS face) ================= */
 (function(){
 const cv=$("facescan"),g=cv.getContext("2d");
-const W=196,H=216,CX=W/2,CY=H/2,SC=52,F=3.2;
-const NV=18,NU=40;
+const W=cv.width,H=cv.height,CX=W/2,CY=H/2+4;
+const CYAN="25,230,242",BRIGHT="160,244,255";
 
-function headPos(u,v){
-  /* anatomically-inspired parametric head, +z is the face */
-  const y=v*0.98;
-  const absv=Math.abs(v);
-  const prof=Math.pow(Math.max(0,1-Math.pow(absv,2.35)),1/2.15);
-  let x=Math.sin(u)*prof, z=Math.cos(u)*prof;
-  if(z>0) z*=0.90;                       /* flatter face plane */
-  if(z<0) z*=1.05;                       /* longer skull back */
-  if(v<-0.22){                           /* jaw -> chin taper */
-    const tt=(-v-0.22)/0.78;
-    const kx=1-0.50*Math.pow(tt,1.6), kz=1-0.34*Math.pow(tt,1.6);
-    x*=kx; z*=Math.max(kz,0.42);
-  }
-  if(v>0.55) x*=0.93;                    /* crown */
-  /* nose: ridge + tip */
-  const nose=Math.exp(-Math.pow(u/0.42,2))*(Math.exp(-Math.pow((y+0.12)/0.075,2))*0.10+Math.exp(-Math.pow((y+0.20)/0.030,2))*0.15);
-  if(z>0) z+=nose;
-  /* eye sockets: slight inward curve */
-  const socket=Math.exp(-Math.pow((Math.abs(u)-0.55)/0.30,2))*Math.exp(-Math.pow((y-0.14)/0.065,2));
-  if(z>0) z-=socket*0.055;
-  /* brow ridge */
-  const brow=Math.exp(-Math.pow(u/0.62,2))*Math.exp(-Math.pow((y-0.24)/0.045,2));
-  if(z>0) z+=brow*0.045;
-  /* lips */
-  const lips=(Math.exp(-Math.pow((y+0.40)/0.035,2))+0.7*Math.exp(-Math.pow((y+0.48)/0.030,2)))*Math.exp(-Math.pow(u/0.40,2));
-  if(z>0) z+=lips*0.055;
-  /* chin */
-  const chin=Math.exp(-Math.pow(u/0.30,2))*Math.exp(-Math.pow((y+0.62)/0.055,2));
-  if(z>0) z+=chin*0.07;
-  /* cheekbones */
-  const cheek=Math.exp(-Math.pow((Math.abs(u)-0.85)/0.38,2))*Math.exp(-Math.pow((y-0.02)/0.10,2));
-  if(z>0) z+=cheek*0.035;
-  /* ears: side bumps */
-  const ear=Math.exp(-Math.pow((Math.abs(Math.abs(u)-Math.PI/2))/0.16,2))*Math.exp(-Math.pow((y-0.02)/0.10,2));
-  if(Math.abs(Math.sin(u))>0.55) x+=Math.sign(Math.sin(u))*ear*0.10;
-  return [x,y,z];
-}
-
+/* a front-facing parametric face, unmistakably a face */
 function draw(t){
   g.clearRect(0,0,W,H);
-  const yaw=0.16+0.32*Math.sin(t/3000), tilt=0.07;
-  const cyw=Math.cos(yaw),syw=Math.sin(yaw),ct=Math.cos(tilt),st=Math.sin(tilt);
-  function proj(p){
-    const x1=p[0]*cyw+p[2]*syw, z1=-p[0]*syw+p[2]*cyw;
-    const y2=p[1]*ct-z1*st, z2=p[1]*st+z1*ct;
-    const s=F/(F+z2);
-    return [CX+x1*s*SC, CY-y2*s*SC, (z2+1)/2];
+  const sway=Math.sin(t/3000)*1.5;                 /* gentle head sway   */
+  const breathe=0.5+0.5*Math.sin(t/1400);          /* glow breathing     */
+  const blink=(Math.sin(t/2400)>0.985)?0.15:1;     /* occasional blink   */
+  g.save(); g.translate(CX+sway,CY);
+
+  /* halo */
+  const halo=g.createRadialGradient(0,0,8,0,0,H*0.55);
+  halo.addColorStop(0,`rgba(${CYAN},${0.10+0.08*breathe})`);
+  halo.addColorStop(1,"rgba(0,0,0,0)");
+  g.fillStyle=halo;g.beginPath();g.arc(0,0,H*0.55,0,7);g.fill();
+
+  /* faint vertical wireframe meridians for the holo feel */
+  g.strokeStyle=`rgba(${CYAN},0.14)`;g.lineWidth=0.6;
+  for(const k of [0.55,0.8,1.0]){
+    g.beginPath();g.ellipse(0,-H*0.02,W*0.36*k,H*0.40,0,0,7);g.stroke();
   }
-  const P3=[],P2=[];
-  for(let i=0;i<=NV;i++){
-    const v=i/NV*2-1,row3=[],row2=[];
-    for(let j=0;j<=NU;j++){const p3=headPos(j/NU*Math.PI*2,v);row3.push(p3);row2.push(proj(p3));}
-    P3.push(row3);P2.push(row2);
-  }
-  const quads=[];
-  for(let i=0;i<NV;i++)for(let j=0;j<NU;j++){
-    const a=P3[i][j],b=P3[i][j+1],c=P3[i+1][j+1],e=P3[i+1][j];
-    const u1=[b[0]-a[0],b[1]-a[1],b[2]-a[2]],u2=[e[0]-a[0],e[1]-a[1],e[2]-a[2]];
-    let n=[u1[1]*u2[2]-u1[2]*u2[1],u1[2]*u2[0]-u1[0]*u2[2],u1[0]*u2[1]-u1[1]*u2[0]];
-    const ln=Math.hypot(n[0],n[1],n[2])||1;n=[n[0]/ln,n[1]/ln,n[2]/ln];
-    quads.push({p:P2[i][j],q:P2[i][j+1],r:P2[i+1][j+1],s:P2[i+1][j],dep:(P2[i][j][2]+P2[i][j+1][2]+P2[i+1][j+1][2]+P2[i+1][j][2])/4,n});
-  }
-  quads.sort((A,B)=>B.dep-A.dep);
-  for(const q of quads){
-    const nx=q.n[0]*cyw+q.n[2]*syw, nz1=-q.n[0]*syw+q.n[2]*cyw;
-    const ny=q.n[1]*ct-nz1*st, nz=q.n[1]*st+nz1*ct;
-    const facing=Math.max(0,-nz);
-    const key=Math.max(0,0.35*facing+0.65*Math.max(0,nx*-0.55)+0.35*Math.max(0,ny));
-    const bright=Math.min(1,0.04+0.95*facing+0.55*key*facing);
-    const R=Math.round(4+42*bright), Gc=Math.round(24+150*bright), B=Math.round(38+180*bright);
-    g.fillStyle=`rgb(${R},${Gc},${B})`;
-    g.beginPath();g.moveTo(q.p[0],q.p[1]);g.lineTo(q.q[0],q.q[1]);g.lineTo(q.r[0],q.r[1]);g.lineTo(q.s[0],q.s[1]);g.closePath();g.fill();
-    if(facing>0.03){
-      g.strokeStyle=`rgba(80,220,240,${(0.05+0.22*bright).toFixed(3)})`;
-      g.lineWidth=0.45;g.stroke();
-    }
-  }
-  /* face features drawn on the 3D surface */
-  function surf(u,y,off=0.04){
-    const p=headPos(u,y);
-    const pr=Math.hypot(p[0],p[2])||1;
-    return proj([p[0]*(1+off/pr*0),p[1],p[2]+off]);
-  }
+
+  /* head outline: skull, temples, jaw, chin */
+  g.strokeStyle=`rgba(${BRIGHT},0.95)`;g.lineWidth=1.6;
+  g.beginPath();
+  g.moveTo(0,-H*0.40);
+  g.bezierCurveTo(W*0.36,-H*0.40,W*0.40,-H*0.06,W*0.34,H*0.08);
+  g.bezierCurveTo(W*0.29,H*0.22,W*0.18,H*0.33,0,H*0.38);
+  g.bezierCurveTo(-W*0.18,H*0.33,-W*0.29,H*0.22,-W*0.34,H*0.08);
+  g.bezierCurveTo(-W*0.40,-H*0.06,-W*0.36,-H*0.40,0,-H*0.40);
+  g.stroke();
+
+  /* ears */
+  g.lineWidth=1.2;
+  g.beginPath();g.ellipse(W*0.36,H*0.02,W*0.03,H*0.07,0,Math.PI*0.5,Math.PI*1.5);g.stroke();
+  g.beginPath();g.ellipse(-W*0.36,H*0.02,W*0.03,H*0.07,0,-Math.PI*0.5,Math.PI*0.5);g.stroke();
+
   /* brows */
-  g.strokeStyle="rgba(160,244,255,0.95)";g.lineWidth=1.5;
-  [-1,1].forEach(side=>{
+  g.strokeStyle=`rgba(${BRIGHT},0.95)`;g.lineWidth=1.6;
+  [-1,1].forEach(sd=>{
     g.beginPath();
-    for(let k=0;k<=8;k++){
-      const u=side*(0.28+k/8*0.42), y=0.235-Math.sin(k/8*Math.PI)*0.02;
-      const p=surf(u,y,0.06);
-      k?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]);
-    }
+    g.moveTo(sd*W*0.07,-H*0.14);
+    g.quadraticCurveTo(sd*W*0.16,-H*0.19,sd*W*0.25,-H*0.13);
     g.stroke();
   });
-  /* eyes: outline + iris + pupil */
-  [-1,1].forEach(side=>{
-    const c=surf(side*0.55,0.14,0.075);
-    g.strokeStyle="rgba(160,244,255,0.95)";g.lineWidth=1;
-    g.beginPath();g.ellipse(c[0],c[1],10,4.6,0,0,7);g.stroke();
-    g.fillStyle="rgba(127,243,255,0.95)";
-    g.beginPath();g.arc(c[0],c[1],3.6,0,7);g.fill();
-    g.fillStyle="rgba(3,20,28,0.98)";
-    g.beginPath();g.arc(c[0],c[1],1.7,0,7);g.fill();
+
+  /* eyes: almond + iris + pupil (blink scales the eye) */
+  [-1,1].forEach(sd=>{
+    const ex=sd*W*0.16,ey=-H*0.06,ew=W*0.115,eh=H*0.032*blink;
+    g.strokeStyle=`rgba(${BRIGHT},0.95)`;g.lineWidth=1.3;
+    g.beginPath();g.ellipse(ex,ey,ew,Math.max(eh,0.6),0,0,7);g.stroke();
+    if(blink>0.5){
+      g.fillStyle=`rgba(127,243,255,0.95)`;
+      g.beginPath();g.arc(ex,ey,W*0.028,0,7);g.fill();
+      g.fillStyle="rgba(3,20,28,0.98)";
+      g.beginPath();g.arc(ex,ey,W*0.013,0,7);g.fill();
+      /* glowing highlight */
+      g.fillStyle=`rgba(255,255,255,${0.5*breathe})`;
+      g.beginPath();g.arc(ex-W*0.008,ey-W*0.008,W*0.006,0,7);g.fill();
+    }
   });
-  /* nose line */
-  g.strokeStyle="rgba(25,230,242,0.6)";g.lineWidth=0.9;
+
+  /* nose: bridge + tip + nostrils */
+  g.strokeStyle=`rgba(${CYAN},0.7)`;g.lineWidth=1.0;
+  g.beginPath();g.moveTo(0,-H*0.05);g.lineTo(0,H*0.10);g.stroke();
   g.beginPath();
-  for(let k=0;k<=6;k++){
-    const y=0.05-k/6*0.30;
-    const p=surf(0,y,0.10);
-    k?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]);
-  }
+  g.moveTo(-W*0.045,H*0.12);g.quadraticCurveTo(0,H*0.16,W*0.045,H*0.12);
   g.stroke();
-  /* mouth */
-  g.strokeStyle="rgba(160,244,255,0.95)";g.lineWidth=1.6;
+
+  /* mouth: slight confident line + lower lip */
+  g.strokeStyle=`rgba(${BRIGHT},0.95)`;g.lineWidth=1.6;
   g.beginPath();
-  for(let k=0;k<=10;k++){
-    const u=-0.50+k/10*1.00;
-    const y=-0.44+Math.sin(k/10*Math.PI)*0.015;
-    const p=surf(u,y,0.05);
-    k?g.lineTo(p[0],p[1]):g.moveTo(p[0],p[1]);
-  }
+  g.moveTo(-W*0.11,H*0.24);g.quadraticCurveTo(0,H*0.27,W*0.11,H*0.24);
   g.stroke();
-  /* scan sweep */
+  g.strokeStyle=`rgba(${CYAN},0.5)`;g.lineWidth=0.9;
+  g.beginPath();
+  g.moveTo(-W*0.07,H*0.29);g.quadraticCurveTo(0,H*0.31,W*0.07,H*0.29);
+  g.stroke();
+
+  /* chin crease */
+  g.strokeStyle=`rgba(${CYAN},0.4)`;g.lineWidth=0.8;
+  g.beginPath();g.ellipse(0,H*0.33,W*0.05,H*0.015,0,0,7);g.stroke();
+
+  g.restore();
+
+  /* holographic scan sweep (screen space) */
   const sy=((t/26)%(H+40))-20;
-  g.fillStyle="rgba(127,243,255,0.06)";g.fillRect(0,sy-9,W,18);
-  g.fillStyle="rgba(127,243,255,0.45)";g.fillRect(0,sy,W,1.3);
+  g.fillStyle=`rgba(127,243,255,0.06)`;g.fillRect(0,sy-9,W,18);
+  g.fillStyle=`rgba(127,243,255,0.45)`;g.fillRect(0,sy,W,1.3);
   requestAnimationFrame(draw);
 }
 requestAnimationFrame(draw);

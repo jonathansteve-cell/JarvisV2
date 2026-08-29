@@ -37,3 +37,8 @@ Thumbs.db
 
 # User-created documents
 documents/
+
+# Packaging artifacts
+build/
+dist/
+*.spec.bak

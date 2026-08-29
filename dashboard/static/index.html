@@ -388,6 +388,7 @@ const cv=$("orb"), g=cv.getContext("2d");
 const TILT=0.42,F=3.4; let spin=0.9;
 const ORB_R=0.17;                            /* base sun radius (fraction of screen)    */
 const ZMIN=0.5,ZMAX=3.0;                     /* orbZoom clamp range                     */
+const CLAMP_R=0.62;                          /* max projected radius (fraction of S)    */
 let orbZoom=1;                               /* live zoom multiplier 0.5x .. 3x         */
 let orbSpeakEnv=0;                           /* smoothed 0..1 voice-pulse envelope      */
 function rng(seed){let s=seed>>>0;return function(){s=(s*1664525+1013904223)>>>0;return s/4294967296}}
@@ -453,8 +454,10 @@ function frame(){
   const pr=S*ORB_R*orbZoom*(1+orbSpeakEnv*0.16)*breathe;
   g.clearRect(0,0,W,H);
   const cs=Math.cos(spin),ss=Math.sin(spin),ct=Math.cos(TILT),st=Math.sin(TILT);
-  function proj(x,y,z){const x1=x*cs+z*ss,z1=-x*ss+z*cs;const y2=y*ct-z1*st,z2=y*st+z1*ct;const s=F/(F+z2);
-    return [cx+x1*s*pr,cy-y2*s*pr,(z2+1)/2];}
+  function proj(x,y,z){const x1=x*cs+z*ss,z1=-x*ss+z*cs;const y2=y*ct-z1*st,z2=y*st+z1*ct;let s=F/(F+z2);
+    let px=x1*s*pr,py=y2*s*pr;const m=Math.hypot(px,py),lim=CLAMP_R*S;  /* clamp: no point blows up */
+    if(m>lim&&m>0){px*=lim/m;py*=lim/m;}
+    return [cx+px,cy-py,(z2+1)/2];}
   const gr=g.createRadialGradient(cx,cy,0,cx,cy,pr*0.9);
   gr.addColorStop(0,"rgba(255,214,140,0.95)");gr.addColorStop(0.12,"rgba(255,170,70,0.85)");
   gr.addColorStop(0.28,"rgba(190,90,12,0.5)");gr.addColorStop(0.55,"rgba(90,40,6,0.25)");gr.addColorStop(1,"rgba(0,0,0,0)");

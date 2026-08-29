@@ -81,6 +81,9 @@ DEFAULT_CONFIG: dict[str, Any] = {
             "smtp_port": int(os.getenv("JARVIS_SMTP_PORT", "587")),
             "imap_host": os.getenv("JARVIS_IMAP_HOST", "imap.gmail.com"),
         },
+        "phone": {
+            "twiml_url": os.getenv("TWILIO_TWIML_URL", ""),
+        },
         "wake_on_lan": {
             "mac_address": os.getenv("JARVIS_TARGET_PC_MAC", ""),
             "broadcast": os.getenv("JARVIS_TARGET_PC_BROADCAST", "255.255.255.255"),

@@ -23,6 +23,8 @@ import sys
 from pathlib import Path
 from typing import Any, Callable
 
+from utils.helpers import PLACEHOLDER_PREFIXES  # noqa: F401  (re-exported for callers)
+
 OK = "ok"
 WARN = "warn"
 FAIL = "fail"
@@ -37,8 +39,6 @@ _ANSI = {
     "bold": "\033[1m",
 }
 
-#: Values that mean "the user never replaced the template text".
-PLACEHOLDER_PREFIXES = ("your_", "placeholder", "changeme", "xxx", "insert_", "todo")
 
 #: Modules Jarvis imports at runtime; a missing one is a hard failure.
 CORE_MODULES = [

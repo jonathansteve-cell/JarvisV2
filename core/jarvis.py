@@ -65,12 +65,14 @@ class Jarvis:
         self.tts = TextToSpeech(self.config)
         self.automation = AutomationController(self.config)
         self.roblox = RobloxController(self.config)
+        self.productivity = ProductivityController(self.config)
+        self.email = EmailController(self.config)
 
         self.modules: list[tuple[str, Any, list[str]]] = [
             ("power", PowerController(self.config), ["wake", "turn on pc", "turn on computer"]),
             ("memory", self.memory, ["remember", "forget", "memory", "my name is", "call me", "i prefer", "i like", "your name is", "change your name"]),
-            ("productivity", ProductivityController(self.config), ["remind", "note", "task", "timer"]),
-            ("email", EmailController(self.config), ["email", "inbox"]),
+            ("productivity", self.productivity, ["remind", "note", "task", "timer", "due reminder"]),
+            ("email", self.email, ["email", "inbox", "send it", "send the draft", "cancel it"]),
             ("whatsapp", WhatsAppController(self.config), ["whatsapp"]),
             ("phone", PhoneController(self.config), ["call", "phone"]),
             ("spotify", SpotifyController(self.config), ["spotify", "play song", "play music", "pause music", "next song", "now playing"]),
@@ -88,8 +90,17 @@ class Jarvis:
             ("application", ApplicationManager(self.config), ["open", "launch", "start", "run", "close", "quit", "running apps"]),
         ]
 
+        # Reminders only help if something actually fires them.
+        self.productivity.start_notifier(self._announce_reminder)
+
     def boot_message(self) -> str:
         return self.ai.greeting()
+
+    def _announce_reminder(self, text: str) -> None:
+        """Called by the productivity sweeper when a reminder comes due."""
+        logger.info("Reminder due: %s", text)
+        if bool(self.config.get("behavior.speak_responses", True)):
+            self.tts.speak(f"Reminder, sir: {text}", blocking=False)
 
     def clean_command(self, command: str) -> str:
         wake_words = self.config.get("voice.wake_words", ["hey jarvis", "jarvis"])
@@ -118,7 +129,7 @@ class Jarvis:
         if not normalized:
             return JarvisResponse(text="I did not hear a command, sir.", success=False, intent="empty")
         if normalized in {"jarvis", "hey jarvis", "jervis", "jrvis"}:
-            return JarvisResponse(text=f"At your service, sir. How may I assist?", success=True, intent="greeting")
+            return JarvisResponse(text="At your service, sir. How may I assist?", success=True, intent="greeting")
 
         # Routines first.
         routine = self.automation.process_routine(command, lambda item: self.process_command(item, speak=False))
@@ -185,4 +196,5 @@ class Jarvis:
         return result
 
     def shutdown(self) -> None:
+        self.productivity.stop_notifier()
         self.tts.stop()

@@ -3,6 +3,8 @@
 What to add, and exactly how to get each item. Priority order: **P0 makes what you
 already have work, P1 fixes things that are quietly broken, P2 adds real capability.**
 
+P1 is complete; P0 is credentials you must supply yourself.
+
 Verify progress at any time with:
 
 ```bash
@@ -45,49 +47,48 @@ python main.py --check --verbose
 
 ---
 
-## P1 — Real bugs found in the code. Fix before trusting these features
+## P1 — Bugs found in the code — **all six now fixed on this branch**
 
-- [ ] **Reminders never fire.** `remind me to stand up in 30 minutes` saves to
-      `data/productivity.json` and nothing ever checks `due_at`. There is no scheduler
-      anywhere in the codebase — the only timer in `productivity_controller.py` merely
-      appends another JSON row.
-  - *How to get it:* add a background sweeper thread started in `core/jarvis.py` that
-    scans `data["reminders"]` every 20 s, speaks + marks done any entry whose `due_at`
-    has passed. ~40 lines.
+Verified by 104 passing tests plus a live end-to-end run.
 
-- [ ] **Absolute times are silently dropped.** `parse_delay()` (`utils/helpers.py:39`)
-      only matches `in N minutes|hours|days`. `remind me to call mom at 6pm` stores
-      `due_at: null` — verified.
-  - *How to get it:* extend `parse_delay` with `at (\d{1,2})(:\d\d)?\s*(am|pm)?` and
-    `tomorrow`, or pull in `dateparser` (`pip install dateparser`).
+- [x] **Reminders now actually fire.** `core/jarvis.py` starts a daemon sweeper
+      (`ProductivityController.start_notifier`) that scans `data/productivity.json`
+      every 20 s, speaks every overdue reminder, and marks it `done` + stamps
+      `fired_at` so it can only fire once. A failing callback cannot kill the
+      sweeper, and `shutdown()` stops the thread. New command: `any reminders due`.
+- [x] **Absolute times are parsed.** `parse_delay()` now understands `at 6pm`,
+      `at 18:30`, `at 6:30 pm`, `tomorrow`, `tomorrow at 6pm`, and `in N weeks`.
+      A bare `at 6` reads as 6pm; a time already gone today rolls to tomorrow.
+      A reminder with no parseable time now *says so* instead of silently storing
+      `due_at: null`.
+- [x] **Smart home actually calls Home Assistant.** `set_device()` maps the spoken
+      device onto a real entity (`light.living_room_light`, `climate.thermostat`,
+      `lock.front_door`, `fan.ceiling_fan`) and POSTs to
+      `/api/services/<domain>/<service>`. On failure it falls back to the local
+      simulation *and says which one happened*. `smart home status` reports the
+      real mode, including "configured but unreachable — simulating".
+- [x] **Calendar uses the time you said.** `add_event()` parses the phrase, so
+      "dentist tomorrow at 6pm" is filed for tomorrow 18:00 instead of an hour from
+      now. Unparseable input is filed an hour out **and tells you**. `show calendar`
+      now prints times, sorted.
+- [x] **Email understands natural phrasing.** Added `email X saying Y`,
+      `email to X subject Y body Z`, and a **draft → confirm** flow:
+      `write an email to X about Y` holds a draft (never written to disk) until you
+      say `send the email` or `cancel the email`. A waiting draft reminds you.
+- [x] **Phone calls actually dial.** With `TWILIO_TWIML_URL` set it calls
+      `client.calls.create(to, from_, url)` and returns the call SID. Without it,
+      it opens the dialer and says exactly what is missing instead of dead-ending.
+      A Twilio error is reported, not swallowed.
 
-- [ ] **Smart home is dead code.** `SmartHomeController._home_assistant()` is defined at
-      `modules/smart_home_controller.py:37` but **never called**. Verified: with
-      `HOME_ASSISTANT_URL` + `HOME_ASSISTANT_TOKEN` set, `turn on living room light`
-      still only writes local JSON — no HTTP request is made.
-  - *How to get it:* call `_home_assistant("light", "turn_on", {...})` from `set_device()`
-    and fall back to the local simulation only when it returns `False`.
-  - *Then get the token:* Home Assistant → your **Profile** → **Long-Lived Access Tokens**
-    → `.env` → `HOME_ASSISTANT_TOKEN=…`, `HOME_ASSISTANT_URL=http://homeassistant.local:8123`
+### Bonus bug found while fixing those
 
-- [ ] **Calendar ignores the time you say.** `add_event()` hard-codes
-      `start = datetime.now() + timedelta(hours=1)` (`modules/calendar_controller.py:31`),
-      so "dentist tomorrow" is filed an hour from now.
-  - *How to get it:* reuse the improved `parse_delay` from above, or add Google Calendar
-    via `google-api-python-client` + OAuth (free, needs a Google Cloud project).
-
-- [ ] **Email phrasing is one brittle regex.** `send email to (\S+) subject (.+?) body (.+)`.
-      `write an email to tony about the project` falls through to AI chat and sends nothing
-      — verified.
-  - *How to get it:* add a draft step — let Groq compose the body, read it back for
-    confirmation, then call `send_email()`. Also add `reply to latest email`.
-
-- [ ] **Phone calls never dial.** `phone_controller.py:21` returns "requires a TwiML URL"
-      even with Twilio fully configured.
-  - *How to get it:* host a TwiML bin that says `<Dial>{{to}}</Dial>`, put the URL in
-    config, and call `client.calls.create(url=…)`.
-
----
+- [x] **A fresh `.env` counted as "configured".** Every placeholder
+      (`your_twilio_sid_here`, `your_home_assistant_long_lived_token_here`, …) is a
+      truthy string, so smart home claimed "Home Assistant" and phone claimed
+      "Twilio is configured" while every call failed. New shared
+      `utils.helpers.is_placeholder_secret()` is now used by email, smart home and
+      phone, and `utils/health_check.py` imports the same constant instead of
+      keeping its own copy.
 
 ## P2 — New capability, needs an account or a library
 
@@ -139,6 +140,7 @@ python main.py --check --verbose
 
 1. **Today, 15 min:** Groq key + Gmail app password + `pip install -r requirements.txt`
    + Pillow. That alone makes conversation, email, voice and screenshots real.
-2. **Next session:** the three P1 code fixes — reminder sweeper, `parse_delay` absolute
-   times, Home Assistant wiring. All small, all in this repo.
+2. **P1 code fixes:** done — reminder sweeper, absolute-time parsing, Home Assistant
+   wiring, calendar times, email phrasing, phone dialling, and placeholder-credential
+   detection all landed on this branch.
 3. **When you want them:** Spotify and Twilio accounts.

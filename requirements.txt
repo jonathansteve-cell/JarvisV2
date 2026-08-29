@@ -6,6 +6,7 @@ psutil>=5.9.8
 # Voice I/O
 SpeechRecognition>=3.10.0
 pyttsx3>=2.90
+edge-tts>=6.1.9
 PyAudio>=0.2.14; platform_system == "Windows"
 
 # Desktop automation and images

@@ -54,6 +54,7 @@ if you ever paste a key into a chat, revoke it and create a new one.
 | **Web Dashboard (Spark-style)** | `python main.py --web` → open http://localhost:8765 |
 | Voice only, no window | `python main.py --voice-only` |
 | One command, then exit | `python main.py --command "system status"` |
+| Self-diagnostic report | `python main.py --check` (add `--verbose` for passing checks) |
 
 The **Web Dashboard** is a glassmorphism control center in your browser: circular
 CPU/MEM/DISK gauges, AI chat console, tasks/notes/memory cards, Roblox session

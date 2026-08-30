@@ -1,0 +1,171 @@
+{
+  "_comment": "Jarvis V2 - API Configuration Template",
+  "_description": "Configure all API integrations here. Sensitive values should be in .env file.",
+  "_version": "2.0.0",
+
+  "ai_providers": {
+    "primary": {
+      "provider": "groq",
+      "model": "llama-3.3-70b-versatile",
+      "temperature": 0.6,
+      "max_tokens": 700,
+      "timeout": 30,
+      "max_retries": 3,
+      "rate_limit": {
+        "requests_per_minute": 30,
+        "tokens_per_minute": 15000
+      },
+      "fallback": "offline"
+    },
+    "alternatives": [
+      {
+        "provider": "openai",
+        "model": "gpt-4-turbo-preview",
+        "temperature": 0.7,
+        "max_tokens": 1000,
+        "timeout": 60,
+        "max_retries": 3,
+        "rate_limit": {
+          "requests_per_minute": 60,
+          "tokens_per_minute": 40000
+        }
+      },
+      {
+        "provider": "anthropic",
+        "model": "claude-3-opus-20240229",
+        "temperature": 0.5,
+        "max_tokens": 1000,
+        "timeout": 60,
+        "max_retries": 3,
+        "rate_limit": {
+          "requests_per_minute": 50,
+          "tokens_per_minute": 30000
+        }
+      }
+    ],
+    "system_prompt": "You are J.A.R.V.I.S V2, a concise, capable, privacy-respecting desktop AI assistant. Respond like a professional intelligent companion. Be truthful about what you can do. Do not claim actions were completed unless a tool/module did them.",
+    "context_window": 12,
+    "memory_enabled": true,
+    "streaming": false
+  },
+
+  "email": {
+    "smtp": {
+      "host": "smtp.gmail.com",
+      "port": 587,
+      "encryption": "tls",
+      "timeout": 20,
+      "max_retries": 2
+    },
+    "imap": {
+      "host": "imap.gmail.com",
+      "port": 993,
+      "encryption": "ssl",
+      "timeout": 30
+    },
+    "defaults": {
+      "from_name": "Jarvis V2",
+      "max_attachment_size_mb": 25,
+      "max_emails_per_request": 50
+    }
+  },
+
+  "twilio": {
+    "api_version": "2010-04-01",
+    "timeout": 15,
+    "max_retries": 2,
+    "whatsapp": {
+      "enabled": true,
+      "max_message_length": 1600
+    },
+    "phone": {
+      "enabled": true,
+      "max_call_duration_seconds": 3600
+    }
+  },
+
+  "spotify": {
+    "api_version": "v1",
+    "timeout": 15,
+    "max_retries": 2,
+    "scopes": [
+      "user-read-playback-state",
+      "user-modify-playback-state",
+      "user-read-currently-playing",
+      "playlist-read-private",
+      "playlist-read-collaborative",
+      "user-library-read",
+      "user-library-modify"
+    ],
+    "market": "US",
+    "limit": 20
+  },
+
+  "home_assistant": {
+    "timeout": 10,
+    "max_retries": 2,
+    "verify_ssl": true,
+    "default_domain": "homeassistant.local",
+    "default_port": 8123
+  },
+
+  "weather": {
+    "provider": "openweathermap",
+    "timeout": 10,
+    "units": "metric",
+    "language": "en"
+  },
+
+  "news": {
+    "provider": "newsapi",
+    "timeout": 10,
+    "country": "us",
+    "page_size": 10
+  },
+
+  "rate_limiting": {
+    "enabled": true,
+    "global_limit": 100,
+    "global_window_seconds": 60,
+    "per_provider": {
+      "groq": {"requests": 30, "window": 60},
+      "openai": {"requests": 60, "window": 60},
+      "anthropic": {"requests": 50, "window": 60},
+      "spotify": {"requests": 100, "window": 30},
+      "twilio": {"requests": 100, "window": 60},
+      "home_assistant": {"requests": 200, "window": 60}
+    }
+  },
+
+  "retry_policy": {
+    "enabled": true,
+    "max_retries": 3,
+    "initial_delay_seconds": 1.0,
+    "max_delay_seconds": 30.0,
+    "exponential_base": 2.0,
+    "retry_on_status_codes": [429, 500, 502, 503, 504]
+  },
+
+  "security": {
+    "encrypt_credentials": true,
+    "credential_rotation_days": 90,
+    "audit_logging": true,
+    "mask_sensitive_values": true,
+    "allowed_ip_ranges": [],
+    "require_https": true
+  },
+
+  "monitoring": {
+    "health_check_interval_seconds": 300,
+    "alert_on_failure": true,
+    "metrics_retention_days": 30,
+    "log_level": "INFO"
+  },
+
+  "fallback_behavior": {
+    "ai_offline_mode": true,
+    "offline_persona": true,
+    "graceful_degradation": true,
+    "notify_user_on_failure": true
+  }
+}

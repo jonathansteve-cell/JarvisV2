@@ -1,0 +1,116 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                    JARVIS V2 - INSTALLER QUICK START                        ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+🎯 GOAL: Create Install.exe for your users
+
+⚡ FASTEST WAY (Windows):
+   Double-click: packaging\OneClickBuild.bat
+
+   Wait 5-10 minutes → Done!
+
+📁 OUTPUT FILES:
+   1. dist\JarvisV2\JarvisV2.exe          (portable app)
+   2. dist\installer\JarvisV2-Setup.exe   (installer)
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📋 REQUIREMENTS:
+
+   ✅ Python 3.10+ (https://python.org)
+      ⚠️  CHECK "Add python.exe to PATH" during installation!
+
+   ✅ Inno Setup 6 (auto-downloaded by build script)
+      https://jrsoftware.org/isdl.php
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🚀 STEP-BY-STEP:
+
+   1. Open Command Prompt (Win+R → cmd → Enter)
+
+   2. Go to JarvisV2 folder:
+      cd C:\path\to\JarvisV2
+
+   3. Run build script:
+      packaging\OneClickBuild.bat
+
+   4. Wait for "BUILD COMPLETE!" message
+
+   5. Find installer at:
+      dist\installer\JarvisV2-Setup.exe
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🎁 WHAT THE INSTALLER DOES:
+
+   ✅ Installs to Program Files\JarvisV2
+   ✅ Creates Start Menu shortcuts
+   ✅ Desktop shortcut (optional)
+   ✅ Start with Windows (optional)
+   ✅ Includes uninstaller
+   ✅ Professional installation wizard
+
+═══════════════════════════════════════════════════════════════════════════════
+
+❓ TROUBLESHOOTING:
+
+   "Python not found"
+   → Install Python from python.org
+   → CHECK "Add python.exe to PATH"!
+
+   "Build failed"
+   → Check error messages
+   → Make sure you have internet
+   → Try running as Administrator
+
+   "Inno Setup not found"
+   → Build script will offer to download it
+   → Or install manually from jrsoftware.org/isdl.php
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📚 DOCUMENTATION:
+
+   Full Guide:     packaging\README.md
+   Detailed Guide: INSTALLER_GUIDE.md
+   Troubleshooting: BUILD_INSTALLER.md
+
+═══════════════════════════════════════════════════════════════════════════════
+
+✅ QUICK CHECKLIST:
+
+   [ ] Python 3.10+ installed
+   [ ] "Add to PATH" checked during Python install
+   [ ] Internet connection available
+   [ ] 500+ MB free disk space
+   [ ] Antivirus not blocking build folder
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🎉 READY?
+
+   Double-click: packaging\OneClickBuild.bat
+
+   You'll have your installer in 5-10 minutes!
+
+═══════════════════════════════════════════════════════════════════════════════
+
+💡 TIPS:
+
+   • Test installer on a clean Windows VM before distributing
+   • Include .env.example so users know what to configure
+   • Add README.md with setup instructions
+   • Consider code signing for production releases
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📞 SUPPORT:
+
+   GitHub Issues: https://github.com/jonathansteve-cell/JarvisV2/issues
+   Documentation: docs/ folder
+   Configuration: config/config.json
+
+═══════════════════════════════════════════════════════════════════════════════
+
+Built with ❤️ for the Jarvis V2 community

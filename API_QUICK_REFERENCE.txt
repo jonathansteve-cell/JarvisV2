@@ -1,0 +1,217 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║                    JARVIS V2 - API QUICK REFERENCE                          ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+🎯 QUICK SETUP (Recommended):
+   python setup_apis.py
+
+📋 INTERACTIVE WIZARD:
+   python -m core.api_setup_wizard
+
+🔍 VALIDATE ALL APIs:
+   python -m core.api_validator
+
+📊 VIEW STATUS:
+   python -c "from core.api_manager import get_api_status_report; print(get_api_status_report())"
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🔑 REQUIRED API (For AI Conversations):
+
+   GROQ AI (Recommended - Fastest, Free)
+   ─────────────────────────────────────
+   URL:      https://console.groq.com
+   Key:      Starts with 'gsk_'
+   Env Var:  GROQ_API_KEY
+   Model:    llama-3.3-70b-versatile
+   Rate:     30 requests/min (free tier)
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🔌 OPTIONAL INTEGRATIONS:
+
+   1. OPENAI (Alternative AI - Most Capable)
+   ─────────────────────────────────────────
+   URL:      https://platform.openai.com
+   Key:      Starts with 'sk-'
+   Env Var:  OPENAI_API_KEY
+   Rate:     60 requests/min
+
+   2. ANTHROPIC (Alternative AI - Best for Safety)
+   ────────────────────────────────────────────────
+   URL:      https://console.anthropic.com
+   Key:      Starts with 'sk-ant-'
+   Env Var:  ANTHROPIC_API_KEY
+   Rate:     50 requests/min
+
+   3. EMAIL (Gmail)
+   ────────────────
+   URL:      https://myaccount.google.com/apppasswords
+   Env Vars: JARVIS_EMAIL_ADDRESS
+             JARVIS_EMAIL_APP_PASSWORD
+   Note:     Requires 2FA enabled on Google
+
+   4. TWILIO (WhatsApp & Phone)
+   ────────────────────────────
+   URL:      https://console.twilio.com
+   Env Vars: TWILIO_ACCOUNT_SID (starts with 'AC')
+             TWILIO_AUTH_TOKEN
+             TWILIO_FROM_PHONE
+             TWILIO_FROM_WHATSAPP
+   Note:     Free trial includes $15 credit
+
+   5. SPOTIFY (Music Control)
+   ──────────────────────────
+   URL:      https://developer.spotify.com/dashboard
+   Env Vars: SPOTIFY_CLIENT_ID
+             SPOTIFY_CLIENT_SECRET
+   Note:     Set Redirect URI to http://localhost:8888/callback
+
+   6. HOME ASSISTANT (Smart Home)
+   ──────────────────────────────
+   URL:      Your HA instance
+   Env Vars: HOME_ASSISTANT_URL
+             HOME_ASSISTANT_TOKEN
+   Note:     Get token from Profile → Long-Lived Access Tokens
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📝 MINIMAL .env SETUP (AI Only):
+
+   GROQ_API_KEY=gsk_your_key_here
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📝 FULL .env SETUP (All Features):
+
+   # AI
+   GROQ_API_KEY=gsk_your_key_here
+   GROQ_MODEL=llama-3.3-70b-versatile
+
+   # Email
+   JARVIS_EMAIL_ADDRESS=you@gmail.com
+   JARVIS_EMAIL_APP_PASSWORD=xxxx xxxx xxxx xxxx
+
+   # Twilio
+   TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+   TWILIO_AUTH_TOKEN=your_auth_token
+   TWILIO_FROM_PHONE=+1234567890
+   TWILIO_FROM_WHATSAPP=whatsapp:+14155238886
+
+   # Spotify
+   SPOTIFY_CLIENT_ID=your_client_id
+   SPOTIFY_CLIENT_SECRET=your_client_secret
+
+   # Home Assistant
+   HOME_ASSISTANT_URL=http://homeassistant.local:8123
+   HOME_ASSISTANT_TOKEN=your_token
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🔒 SECURITY BEST PRACTICES:
+
+   ✅ Never commit .env to Git
+   ✅ Use App Passwords for email
+   ✅ Rotate keys every 90 days
+   ✅ Enable 2FA on all accounts
+   ✅ Monitor API usage regularly
+   ✅ Use encrypted storage (pip install cryptography)
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🧪 TESTING COMMANDS:
+
+   # Validate all APIs
+   python -m core.api_validator
+
+   # Test specific API
+   python -c "from core.api_validator import APIValidator; v = APIValidator(); print(v.validate_groq('your_key'))"
+
+   # View status report
+   python -c "from core.api_manager import get_api_status_report; print(get_api_status_report())"
+
+   # Check environment
+   python -c "from core.secure_env import SecureEnvManager; print(SecureEnvManager().get_status_report())"
+
+═══════════════════════════════════════════════════════════════════════════════
+
+⚠️ COMMON ERRORS & SOLUTIONS:
+
+   "Invalid API Key"
+   → Double-check the key in .env
+   → Make sure no extra spaces
+   → Regenerate if needed
+
+   "Rate Limited"
+   → Wait a minute and try again
+   → Reduce request frequency
+   → Upgrade API plan
+
+   "Network Error"
+   → Check internet connection
+   → Verify API endpoint accessible
+   → Check firewall settings
+
+   "Module not found: cryptography"
+   → pip install cryptography
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📊 RATE LIMITS:
+
+   Provider        Requests/Min    Tokens/Min
+   ──────────────  ─────────────   ──────────
+   Groq            30              15,000
+   OpenAI          60              40,000
+   Anthropic       50              30,000
+   Spotify         100             -
+   Twilio          100             -
+   Home Assistant  200             -
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📁 CONFIGURATION FILES:
+
+   .env                    API keys and secrets
+   config/config.json      App configuration
+   config/api_config.json  API-specific settings
+   config/.credentials.enc Encrypted credentials
+   config/.master.key      Encryption key
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📚 DOCUMENTATION:
+
+   API_CONFIGURATION_GUIDE.md    Full setup guide
+   API_QUICK_REFERENCE.txt       This file
+   packaging/README.md           Installer guide
+
+═══════════════════════════════════════════════════════════════════════════════
+
+🚀 QUICK START:
+
+   1. Copy .env.example to .env
+   2. Run: python setup_apis.py
+   3. Follow the prompts
+   4. Run: python main.py
+
+═══════════════════════════════════════════════════════════════════════════════
+
+💡 TIPS:
+
+   • Groq is recommended for fastest response times
+   • Configure OpenAI/Anthropic as fallbacks for reliability
+   • Use App Passwords for email, never your main password
+   • Free Twilio trial includes $15 credit
+   • Home Assistant requires a running instance on your network
+
+═══════════════════════════════════════════════════════════════════════════════
+
+📞 SUPPORT:
+
+   GitHub: https://github.com/jonathansteve-cell/JarvisV2/issues
+   Docs:   docs/ folder
+
+═══════════════════════════════════════════════════════════════════════════════
+
+Built with ❤️ for the Jarvis V2 community

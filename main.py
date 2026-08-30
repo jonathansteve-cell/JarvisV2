@@ -91,12 +91,28 @@ def run_web(port: int) -> int:
     return 0
 
 
+def run_voice_ui() -> int:
+    """Run the voice-only 3D interface."""
+    setup_logging(console=True)
+    from gui.voice_only_ui import VoiceOnlyUI
+    
+    app = VoiceOnlyUI()
+    app.run()
+    return 0
+
+
+def run_modern_ui() -> int:
+    """Run the modern chat interface."""
+    setup_logging(console=True)
+    from gui.modern_ui import ModernJarvisUI
+    
+    app = ModernJarvisUI()
+    app.run()
+    return 0
+
+
 def main() -> int:
-    parser = argparse.ArgumentParser(description="J.A.R.V.I.S V2 desktop AI assistant")
-    parser.add_argument("--gui", action="store_true", help="Run the desktop Tkinter HUD instead of the web dashboard")
-    parser.add_argument("--voice-only", action="store_true", help="Pure voice assistant, no UI")
-    parser.add_argument("--web", action="store_true", help="Run the web dashboard explicitly (default)")
-    parser.add_argument("--port", type=int, default=8765, help="Port for the web dashboard")
+    parser = argparse.ArgumentParser(description="J.A.R.V.I.S V2 - Voice AI Assistant")
     parser.add_argument("--command", help="Run a single text command and exit")
     parser.add_argument("--check", action="store_true", help="Run the self-diagnostic report and exit")
     parser.add_argument("--verbose", action="store_true", help="With --check, also print the checks that passed")
@@ -106,11 +122,9 @@ def main() -> int:
         return run_check(args.verbose)
     if args.command:
         return run_command(args.command)
-    if args.voice_only:
-        return run_voice_only()
-    if args.gui:
-        return run_gui()
-    return run_web(args.port)
+    
+    # Default: Launch Voice-Only 3D UI
+    return run_voice_ui()
 
 
 if __name__ == "__main__":

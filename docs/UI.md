@@ -34,13 +34,28 @@ cd ui && npm run dev                   # terminal 2 → http://localhost:3000
 
 | Panel | Contents |
 | --- | --- |
-| Center core | Rotating reactor with live CPU / RAM / GPU / NET gauges |
+| Center core | Rotating reactor with live CPU / RAM / GPU / NET gauges; pulses while Jarvis speaks |
 | Drive array | One card per mounted partition: fill, free space, disk I/O |
 | Active modules | Top processes by memory, with per-process CPU |
 | Weather uplink | Open-Meteo current conditions, cached 15 minutes |
 | Header | Clock plus the live task list — add and tick tasks here |
-| Command console | Bottom dock; anything Jarvis understands works |
+| Command console | Bottom dock: **microphone** or keyboard; anything Jarvis understands works |
 | Quick dock | Theme cycle (4 themes), scanlines, diagnostics, sleep mode |
+
+### Voice
+
+The console has an always-on microphone (Web Speech API). Say a command, and it
+is transcribed, debounced into a single utterance, and sent through the same
+`/api/command` pipeline as typed text. Replies are spoken back at rate 0.92 /
+pitch 0.55 with an `en-GB` male voice, matching the `dark_synthetic` Python
+persona. The mic mutes itself while Jarvis talks so he never hears his own reply.
+
+Wake words come from `voice.wake_words` in `config/config.json`, so ambient
+speech is ignored and you can say `hey jarvis, system status`.
+
+Dictation needs Chrome, Edge or Safari, and needs HTTPS or `localhost` — over
+plain `http://<lan-ip>` the browser blocks the microphone. The speaker icon mutes
+replies; the mic icon toggles dictation. Details in [`ui/README.md`](../ui/README.md).
 
 **Under the hood:** `dashboard/server.py` uses only the Python standard library
 (`http.server`). `GET /api/state` returns the full snapshot (polled every 2 s),

@@ -194,7 +194,12 @@ class DashboardState:
             "assistant_name": jarvis.ai.assistant_name(),
             "system": {"cpu": cpu, "mem": mem, "disk": disk, "battery": battery},
             "ai": {"groq_ready": groq_ready, "model": jarvis.config.get("ai.model")},
-            "voice": {"available": jarvis.tts.enabled},
+            "voice": {
+                "available": jarvis.tts.enabled,
+                # Lets the browser mic gate on the same wake words as the
+                # desktop assistant instead of firing on ambient speech.
+                "wake_words": list(jarvis.config.get("voice.wake_words", []) or []),
+            },
             "memory": {
                 "stats": jarvis.memory.stats(),
                 "facts": [

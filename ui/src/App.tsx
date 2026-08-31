@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { DriveData, TaskItem, ProcessItem, WeatherData, HudTheme } from './types';
 import { HUD_THEMES, ThemeConfig } from './utils/theme';
 import { sound } from './utils/audio';
-import { useJarvis } from './lib/api';
+import { CommandResult, useJarvis } from './lib/api';
+import { useSpeech, useVoiceCommand } from './lib/speech';
 import { BackgroundGrid } from './components/BackgroundGrid';
 import { HeaderBar } from './components/HeaderBar';
 import { DriveTelemetryCard } from './components/DriveTelemetryCard';
@@ -94,6 +95,34 @@ export default function App() {
   // Live backend. Sleep mode stops polling so the machine can idle.
   const { hud, state, connected, lastError, runCommand, sending } = useJarvis({
     paused: isSleepMode,
+  });
+
+  // Spoken replies. Mic is held while Jarvis talks so it never hears itself.
+  const speech = useSpeech({ enabled: true });
+
+  // Wake words mirror config.json `voice.wake_words`; an empty list means every
+  // utterance is a command.
+  const wakeWords = state?.voice?.wake_words ?? [];
+
+  /** Send a command and speak the reply. Used by both the mic and the keyboard. */
+  const sendCommand = async (text: string): Promise<CommandResult | null> => {
+    const result = await runCommand(text);
+    const spoken = result?.error || result?.text;
+    if (spoken && speech.enabled) speech.speak(spoken);
+    else if (!result) sound.playAlert();
+    return result;
+  };
+
+  // The dictation hook only needs fire-and-forget.
+  const handleVoiceCommand = (text: string): void => {
+    void sendCommand(text);
+  };
+
+  const voice = useVoiceCommand({
+    onCommand: handleVoiceCommand,
+    paused: speech.speaking || isSleepMode,
+    wakeWords,
+    autoStart: true,
   });
 
   // Until the first successful poll we are in demo mode.
@@ -248,6 +277,7 @@ export default function App() {
               weather={weather}
               onOpenWeatherModal={() => setIsWeatherOpen(true)}
               gauges={hud?.gauges}
+              speaking={speech.speaking}
               onOpenAppLauncher={(name) => {
                 setActiveAppModal(name);
                 sound.playConfirm();
@@ -280,7 +310,14 @@ export default function App() {
             theme={theme}
             connected={connected || demoMode}
             sending={sending}
-            onSend={runCommand}
+            onSend={sendCommand}
+            micState={voice.micState}
+            interim={voice.interim}
+            micSupported={voice.supported}
+            onToggleMic={voice.toggle}
+            speechEnabled={speech.enabled}
+            onToggleSpeech={() => speech.setEnabled(!speech.enabled)}
+            speaking={speech.speaking}
           />
 
           {/* Bottom Right: Quick Action Controls */}
@@ -305,8 +342,12 @@ export default function App() {
         </footer>
 
         {/* Status readout */}
-        <div className="flex items-center justify-center gap-6 text-[9px] font-mono text-cyan-500/60 tracking-widest pt-1.5 pb-0.5">
+        <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-1 text-[9px] font-mono text-cyan-500/60 tracking-widest pt-1.5 pb-0.5">
           <span className={connected ? '' : 'text-orange-400 font-bold'}>{coreStatus}</span>
+          <span className={voice.micState === 'listening' ? 'text-orange-400 font-bold' : ''}>
+            MIC: {voice.micState.toUpperCase()}
+          </span>
+          <span>{speech.speaking ? 'VOICE: SPEAKING' : speech.enabled ? 'VOICE: READY' : 'VOICE: MUTED'}</span>
           <span>MODEL: {(state?.ai.model ?? 'unknown').toUpperCase()}</span>
           <span className="text-orange-400 font-bold">UPTIME: {state?.uptime ?? '--:--:--'}</span>
           <span>

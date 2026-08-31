@@ -55,7 +55,8 @@ yes
 | --- | --- |
 | `dashboard/telemetry.py` | Per-partition drives, process list, network rate, GPU (NVML), weather (Open-Meteo, 15-min cache) |
 | `ui/src/lib/api.ts` | Typed API client, snake_case → camelCase mapping, `useJarvis()` polling hook |
-| `ui/src/components/CommandConsole.tsx` | Bottom-dock command input — restores the chat the old dashboard had |
+| `ui/src/components/CommandConsole.tsx` | Bottom-dock mic + text input — restores the chat the old dashboard had |
+| `ui/src/lib/speech.ts` | `useVoiceCommand()` dictation + `useSpeech()` replies (Web Speech API) |
 | `tests/test_telemetry.py` | 14 tests for the probes and the `/api/state` contract |
 | `tests/test_task_lifecycle.py` | 7 tests for the new task commands |
 | `tests/test_dashboard_http.py` | 11 tests over a real socket against every route |
@@ -109,13 +110,25 @@ jarvis.productivity is state.productivity: False
 `DashboardState` now uses `jarvis.productivity`. The HTTP round-trip test covers
 it.
 
+### 3. Browser voice was dropped by the merge, then restored
+
+This one was self-inflicted. The deleted `dashboard/static/index.html` had a
+working always-on microphone (`2 × SpeechRecognition`, `2 × webkitSpeechRecognition`,
+`7 × speechSynthesis`). Deleting that file silently removed browser voice from the
+project, because JarvisV1 — being a mock shell — had no audio input at all.
+
+Restored in `ui/src/lib/speech.ts` and extended rather than copied: interim-result
+live captions, wake-word gating sourced from `voice.wake_words` in `/api/state`
+(the old dashboard hardcoded nothing but also did no gating), typed commands now
+get spoken replies too, and the core pulses while Jarvis speaks.
+
 ---
 
 ## Verification
 
 ```
 $ pytest tests/
-147 passed in 6.86s                  # was 115 before this work
+148 passed in 7.37s                  # was 115 before this work
 
 $ cd ui && npm run lint              # tsc --noEmit → exit 0
 $ cd ui && npm run build             # 2086 modules, 394.39 kB JS / 45.92 kB CSS

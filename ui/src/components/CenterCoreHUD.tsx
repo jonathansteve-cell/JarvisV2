@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
+import { AnimatePresence, motion } from 'motion/react';
 import { DriveData, ProcessItem, WeatherData } from '../types';
 import { ThemeConfig } from '../utils/theme';
 import { sound } from '../utils/audio';
@@ -26,6 +26,8 @@ interface CenterCoreHUDProps {
   onOpenAppLauncher: (appName: string) => void;
   /** Live readings; omitted = pure demo mode with simulated oscillation. */
   gauges?: CoreGauges;
+  /** Swells the core while Jarvis is speaking. */
+  speaking?: boolean;
 }
 
 export const CenterCoreHUD: React.FC<CenterCoreHUDProps> = ({
@@ -39,6 +41,7 @@ export const CenterCoreHUD: React.FC<CenterCoreHUDProps> = ({
   onOpenWeatherModal,
   onOpenAppLauncher,
   gauges,
+  speaking = false,
 }) => {
   const [coreRotation, setCoreRotation] = useState(0);
   const [hazardRotation, setHazardRotation] = useState(0);
@@ -112,6 +115,24 @@ export const CenterCoreHUD: React.FC<CenterCoreHUDProps> = ({
 
   return (
     <div className="relative flex items-center justify-center w-full max-w-[620px] lg:max-w-[700px] h-[520px] lg:h-[580px] select-none">
+
+      {/* Voice pulse — swells behind the core while Jarvis is speaking */}
+      <AnimatePresence>
+        {speaking && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.55 }}
+            animate={{ opacity: [0.35, 0.75, 0.35], scale: [0.75, 1.06, 0.75] }}
+            exit={{ opacity: 0, scale: 0.55 }}
+            transition={{ repeat: Infinity, duration: 1.6, ease: 'easeInOut' }}
+            className="absolute inset-0 z-0 pointer-events-none rounded-full"
+            style={{
+              background: `radial-gradient(circle, ${theme.primaryGlow} 0%, transparent 62%)`,
+              filter: 'blur(28px)',
+            }}
+          />
+        )}
+      </AnimatePresence>
+
       {/* Top Center Mode Buttons */}
       <div className="absolute top-2 z-30 flex items-center gap-3">
         <button

@@ -90,7 +90,7 @@ export interface JarvisState {
   assistant_name: string;
   system: ApiSystem;
   ai: { groq_ready: boolean; model: string };
-  voice: { available: boolean };
+  voice: { available: boolean; wake_words?: string[] };
   memory: { stats: Record<string, number>; facts: { key: string; value: string }[] };
   productivity: { tasks: ApiTask[]; notes: { text: string }[] };
   roblox: {

@@ -91,16 +91,55 @@ none of it is used.
 
 ---
 
+## Voice
+
+The HUD is voice-first. Everything is browser-side Web Speech API — no audio ever
+touches the Python backend.
+
+**Dictation** (`useVoiceCommand` in `src/lib/speech.ts`):
+
+- Continuous recognition with interim results, so the console captions you live.
+- **Debounce** — final transcripts accumulate and fire after 900 ms of silence,
+  so a full sentence becomes one command instead of five.
+- **Barge-in protection** — the mic is torn down while Jarvis is speaking and
+  restarted 300 ms after, so it never hears him answer himself.
+- **Auto-restart** — continuous recognition ends on its own; the hook restarts it
+  unless you switched it off.
+- **Wake words** come from `voice.wake_words` in `/api/state` (the same list the
+  desktop assistant uses). With them set, ambient speech is ignored and the
+  leading wake word is stripped from the transcript.
+- **Permission states** are surfaced, not swallowed: `LISTENING`, `MIC OFF`,
+  `STANDBY`, `BLOCKED — CLICK TO RETRY`, `MIC ERROR`, `UNSUPPORTED — USE CHROME`.
+
+**Replies** (`useSpeech`): `speechSynthesis` at **rate 0.92 / pitch 0.55**,
+preferring an `en-GB` male voice — that matches the Python `dark_synthetic`
+persona so the browser and the desktop app sound like the same assistant. The
+core pulses while he talks.
+
+Typed and spoken commands go through the identical path (`/api/command`), and
+both get spoken replies. The speaker icon mutes output instantly, mid-sentence.
+
+> **Browser support:** dictation needs Chrome, Edge or Safari. Firefox has no
+> `SpeechRecognition`, so the mic shows `UNSUPPORTED — USE CHROME` and the
+> keyboard still works. The mic also needs HTTPS or `localhost` — over plain
+> `http://<lan-ip>` the browser will refuse it.
+>
+> **Not verified in this repo's CI:** the Web Speech API is browser-only, so
+> dictation and playback have no automated tests. They were exercised by hand.
+
+---
+
 ## What talks to the backend
 
 | UI element | Command sent |
 | --- | --- |
 | Command console (bottom dock) | whatever you type, verbatim |
+| **Microphone** | whatever you say, wake word stripped |
 | Add task | `add task <text>` |
 | Tick a task | `complete task <text>` |
 | Untick a task | `reopen task <text>` |
 
-Anything Jarvis understands works in the console — `system status`,
+Anything Jarvis understands works in either — `system status`,
 `open chrome then volume 40`, `start a 30 minute roblox grind session`.
 
 The process list is deliberately **read-only**. Killing a process because
@@ -112,12 +151,13 @@ someone mis-clicked a HUD row is not a trade worth making.
 
 ```
 src/
-  App.tsx                     state, polling, live/demo switching
+  App.tsx                     state, polling, live/demo switching, voice wiring
   lib/api.ts                  fetch + snake_case → camelCase mapping + useJarvis()
+  lib/speech.ts               useVoiceCommand() dictation + useSpeech() replies
   components/
-    CenterCoreHUD.tsx         reactor core, CPU/RAM/GPU/NET rings, processes, weather
+    CenterCoreHUD.tsx         reactor core, gauges, processes, weather, voice pulse
     DriveTelemetryCard.tsx    per-drive storage card
-    CommandConsole.tsx        bottom-dock command input
+    CommandConsole.tsx        bottom-dock mic + input + spoken-reply toggle
     HeaderBar.tsx             clock + task list
     QuickDockControls.tsx     theme / scanlines / diagnostics / sleep
     RecycleBinWidget.tsx      decorative

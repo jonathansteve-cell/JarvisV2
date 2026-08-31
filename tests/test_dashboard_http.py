@@ -102,6 +102,17 @@ def test_api_health_reports_ui_build_state(server):
     assert data["ui_built"] == (UI_DIST / "index.html").exists()
 
 
+def test_state_exposes_wake_words_for_the_browser_mic(server):
+    """The HUD gates dictation on these, so they must come from the backend."""
+    _, _, body = get(f"{server.base}/api/state")
+    voice = json.loads(body)["voice"]
+    assert "available" in voice
+    assert isinstance(voice["wake_words"], list)
+    assert voice["wake_words"], "expected the configured wake words, not an empty list"
+    assert all(isinstance(word, str) and word for word in voice["wake_words"])
+    assert voice["wake_words"] == list(server.jarvis.config.get("voice.wake_words"))
+
+
 def test_unknown_api_route_is_json_404_not_the_spa(server):
     """An /api/* miss must not fall through to index.html — that breaks fetch()."""
     status, content_type, body = get(f"{server.base}/api/does-not-exist")

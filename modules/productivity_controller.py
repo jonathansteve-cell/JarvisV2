@@ -74,6 +74,46 @@ class ProductivityController:
             return "You have no open tasks, sir."
         return "Open tasks: " + "; ".join(task["text"] for task in tasks[:10])
 
+    def _find_task(self, text: str) -> dict[str, Any] | None:
+        """Exact match first, then substring in either direction."""
+        needle = text.strip().lower()
+        if not needle:
+            return None
+        with self._lock:
+            for task in self.data["tasks"]:
+                if task["text"].lower() == needle:
+                    return task
+            for task in self.data["tasks"]:
+                stored = task["text"].lower()
+                if needle in stored or stored in needle:
+                    return task
+        return None
+
+    def complete_task(self, text: str, done: bool = True) -> str:
+        """Mark the closest-matching task done, or reopen it."""
+        if not text.strip():
+            return "Which task should I update, sir?"
+        task = self._find_task(text)
+        if task is None:
+            return f"I could not find a task matching '{text.strip()}', sir."
+        with self._lock:
+            task["done"] = done
+            task["completed_at"] = datetime.now().isoformat() if done else None
+            label = task["text"]
+        self._save()
+        return f"Marked done: {label}" if done else f"Reopened: {label}"
+
+    def remove_task(self, text: str) -> str:
+        """Delete a task outright."""
+        task = self._find_task(text)
+        if task is None:
+            return f"I could not find a task matching '{text.strip()}', sir."
+        with self._lock:
+            self.data["tasks"] = [item for item in self.data["tasks"] if item is not task]
+            label = task["text"]
+        self._save()
+        return f"Task removed: {label}"
+
     # ------------------------------------------------------------- reminders
     def add_reminder(self, text: str, due_at: datetime | None) -> str:
         with self._lock:
@@ -203,6 +243,21 @@ class ProductivityController:
         if lower.startswith("add task") or lower.startswith("create task"):
             text = re.sub(r"^(add task|create task)[: ]*", "", command, flags=re.I).strip()
             return {"success": True, "response": self.add_task(text)}
+        # Longest prefixes first so "mark task done" is not eaten by "mark task".
+        if lower.startswith(("complete task", "finish task", "mark task done", "done task", "mark task")):
+            text = re.sub(
+                r"^(complete task|finish task|mark task done|done task|mark task)[: ]*",
+                "",
+                command,
+                flags=re.I,
+            ).strip()
+            return {"success": True, "response": self.complete_task(text)}
+        if lower.startswith(("reopen task", "undo task")):
+            text = re.sub(r"^(reopen task|undo task)[: ]*", "", command, flags=re.I).strip()
+            return {"success": True, "response": self.complete_task(text, done=False)}
+        if lower.startswith(("delete task", "remove task")):
+            text = re.sub(r"^(delete task|remove task)[: ]*", "", command, flags=re.I).strip()
+            return {"success": True, "response": self.remove_task(text)}
         if "show tasks" in lower or "list tasks" in lower or "my tasks" in lower:
             return {"success": True, "response": self.list_tasks(), "data": self.data["tasks"]}
         if lower.startswith("remind me"):

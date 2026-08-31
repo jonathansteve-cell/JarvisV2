@@ -104,25 +104,34 @@ stack. Full guide in [`docs/UI.md`](docs/UI.md).
   (starts a session when idle, reports stats when one is running)
 - **Telemetry everywhere** — `CPU MEM DSK PWR` under the core, refreshed every 2 s
 
-## Solar Web Dashboard (Spark-style)
+## CyberHUD (browser dashboard)
 
-Prefer a browser dashboard? `python main.py --web` serves a **glassmorphism
-Spark-style control center** at `http://localhost:8765` — built with the Python
-standard library only (no Flask, no npm):
+`python main.py` serves the **CyberHUD** at `http://localhost:8765` — a
+holographic React command center merged in from
+[`JarvisV1`](https://github.com/jonathansteve-cell/JarvisV1) (originally built in
+Google AI Studio), backed by the Python API in `dashboard/server.py`:
 
-- **Hero solar core** — the same particle-orbit animation ported to HTML canvas
-- **Circular live gauges** — CPU / MEMORY / DISK with color thresholds, power line
-- **AI console card** — full chat with Jarvis (same pipeline as HUD/CLI/voice)
-- **Tasks · Notes · Memory Core cards** — live from local SQLite + JSON stores
-- **Roblox safe-mode card** — session countdown, goals checklist, grind stats
-- **Quick actions grid** and a fixed bottom command console (`SEND / SPEAK /
-  ROBLOX / GRIND`)
-- **Browser voice** — SPEAK button uses the Web Speech API; replies are spoken
-  aloud with a deep synthetic profile (rate 0.92, pitch 0.55), TTS toggleable
+- **Center reactor core** — live CPU / RAM / GPU / NET gauges in rotating rings
+- **Drive array** — one card per mounted partition with fill level and disk I/O
+- **Active modules** — top processes by memory with per-process CPU
+- **Weather uplink** — Open-Meteo current conditions, cached 15 minutes
+- **Command console** — bottom dock; anything Jarvis understands works here
+- **Task list** — add and tick tasks; they go through the real pipeline
+- **Four themes** — `solar-amber` (the house style), cyan, matrix, magenta
+
+Build it once before first run:
+
+```bash
+cd ui && npm install && npm run build
+```
 
 Everything polls `/api/state` every 2 seconds; commands POST to `/api/command`.
-Point a browser at it from any device on your network — the dashboard is the UI,
-Jarvis is the engine.
+Point a browser at it from any device on your network — the HUD is the UI,
+Jarvis is the engine. Full details in [`ui/README.md`](ui/README.md).
+
+**Nothing on screen is invented.** A probe that cannot report a value returns
+`null` and its panel reads `NO SIGNAL` or `--`: drive temperature (needs
+S.M.A.R.T.), GPU (needs `pynvml`), and weather (until the first lookup lands).
 
 ## Voice personas
 
@@ -282,9 +291,12 @@ no extra install is needed; on Linux install `mpv` or `ffmpeg` (`ffplay`).
 
 | Mode | Command | What happens |
 | --- | --- | --- |
-| **Solar HUD** (default) | `python main.py` | Full desktop interface + voice |
-| **Web Dashboard** | `python main.py --web` | Spark-style browser dashboard at `localhost:8765` |
+| **CyberHUD** (default) | `python main.py` | Browser dashboard at `localhost:8765` |
+| **CyberHUD, other port** | `python main.py --web --port 9000` | Same, on port 9000 |
+| **Desktop HUD** | `python main.py --gui` | Tkinter Solar Core window |
 | **Voice only** | `python main.py --voice-only` | No window; pure microphone loop |
+| **Voice 3D UI** | `python main.py --voice-ui` | Voice-only 3D interface |
+| **Modern chat** | `python main.py --modern-ui` | Modern chat interface |
 | **One command** | `python main.py --command "system status"` | Execute and print, then exit |
 | **Self-check** | `python main.py --check` | Dependency report; non-zero exit if something is broken |
 
@@ -502,8 +514,13 @@ JarvisV2/
 │   └── main_window.py         # Solar Core HUD (Tkinter)
 │
 ├── dashboard/
-│   ├── server.py              # Web dashboard server (stdlib only)
-│   └── static/index.html      # Spark-style glass UI
+│   ├── server.py              # CyberHUD server + JSON API (stdlib only)
+│   └── telemetry.py           # drives / processes / net / GPU / weather probes
+│
+├── ui/                        # CyberHUD React app (merged from JarvisV1)
+│   ├── src/lib/api.ts         # fetch + snake_case→camelCase mapping + useJarvis()
+│   ├── src/components/        # core HUD, drive cards, console, modals
+│   └── dist/                  # built output, served by dashboard/server.py
 │
 ├── voice/
 │   ├── speech_recognition_engine.py   # Microphone → text

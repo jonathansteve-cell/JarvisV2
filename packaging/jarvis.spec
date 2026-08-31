@@ -15,9 +15,15 @@ datas = [
     (str(PROJECT / "config"), "config"),                      # config/config.json
     (str(PROJECT / "personality"), "personality"),            # personality profiles
     (str(PROJECT / "docs" / "images"), "docs/images"),        # hero_orb.png for the HUD
-    (str(PROJECT / "dashboard"), "dashboard"),                # web dashboard (--web still works)
+    (str(PROJECT / "dashboard"), "dashboard"),                # dashboard server + telemetry
     (str(PROJECT / ".env.example"), "."),                     # template for machine-local secrets
 ]
+
+# The CyberHUD React bundle is a build artifact (gitignored), so ship it only
+# when it has actually been built: cd ui && npm install && npm run build
+_ui_dist = PROJECT / "ui" / "dist"
+if _ui_dist.exists():
+    datas.append((str(_ui_dist), "ui/dist"))
 
 a = Analysis(
     [str(ROOT / "desktop_launcher.py")],

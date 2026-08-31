@@ -1,13 +1,20 @@
 """J.A.R.V.I.S V2 launcher.
 
 Run:
-  python main.py             # web dashboard (browser, always-on mic)
-  python main.py --gui       # desktop Tkinter HUD (optional)
-  python main.py --web       # web dashboard explicitly
+  python main.py             # CyberHUD web dashboard (browser)
+  python main.py --web       # same, explicitly
+  python main.py --web --port 9000
+  python main.py --gui       # desktop Tkinter HUD
   python main.py --voice-only # pure voice assistant
+  python main.py --voice-ui  # voice-only 3D interface
+  python main.py --modern-ui # modern chat interface
   python main.py --command "system status" # one command
   python main.py --check      # self-diagnostic report, non-zero exit on failure
   python main.py --check --verbose # include the passing checks too
+
+The web dashboard serves the React UI built from ui/. Build it once first:
+
+  cd ui && npm install && npm run build
 """
 
 from __future__ import annotations
@@ -17,6 +24,7 @@ import logging
 import time
 
 from core.jarvis import Jarvis
+from dashboard.server import DEFAULT_PORT as DEFAULT_WEB_PORT
 from utils.logger import setup_logging
 from voice.speech_recognition_engine import SpeechRecognitionEngine
 
@@ -116,15 +124,32 @@ def main() -> int:
     parser.add_argument("--command", help="Run a single text command and exit")
     parser.add_argument("--check", action="store_true", help="Run the self-diagnostic report and exit")
     parser.add_argument("--verbose", action="store_true", help="With --check, also print the checks that passed")
+
+    interface = parser.add_mutually_exclusive_group()
+    interface.add_argument("--web", action="store_true", help="CyberHUD browser dashboard (default)")
+    interface.add_argument("--gui", action="store_true", help="Desktop Tkinter Hero Core HUD")
+    interface.add_argument("--voice-only", action="store_true", help="Voice-only assistant, no screen UI")
+    interface.add_argument("--voice-ui", action="store_true", help="Voice-only 3D interface")
+    interface.add_argument("--modern-ui", action="store_true", help="Modern chat interface")
+    parser.add_argument("--port", type=int, default=DEFAULT_WEB_PORT, help=f"Port for --web (default {DEFAULT_WEB_PORT})")
+
     args = parser.parse_args()
 
     if args.check:
         return run_check(args.verbose)
     if args.command:
         return run_command(args.command)
-    
-    # Default: Launch Voice-Only 3D UI
-    return run_voice_ui()
+    if args.gui:
+        return run_gui()
+    if args.voice_only:
+        return run_voice_only()
+    if args.voice_ui:
+        return run_voice_ui()
+    if args.modern_ui:
+        return run_modern_ui()
+
+    # Default: the CyberHUD browser dashboard.
+    return run_web(args.port)
 
 
 if __name__ == "__main__":

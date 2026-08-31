@@ -1,21 +1,26 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { DriveData, TaskItem, ProcessItem, WeatherData, HudTheme } from './types';
 import { HUD_THEMES, ThemeConfig } from './utils/theme';
 import { sound } from './utils/audio';
+import { useJarvis } from './lib/api';
 import { BackgroundGrid } from './components/BackgroundGrid';
 import { HeaderBar } from './components/HeaderBar';
 import { DriveTelemetryCard } from './components/DriveTelemetryCard';
 import { CenterCoreHUD } from './components/CenterCoreHUD';
 import { RecycleBinWidget } from './components/RecycleBinWidget';
 import { QuickDockControls } from './components/QuickDockControls';
+import { CommandConsole } from './components/CommandConsole';
 import { Modals } from './components/Modals';
 
-// Initial Mock Telemetry Data accurately matched to screenshot
-const INITIAL_DRIVES: DriveData[] = [
-  // Left side
+// ---------------------------------------------------------------------------
+// Demo data. Rendered ONLY until the backend answers its first /api/state, so
+// the HUD is never blank on a cold start or in a static preview. Once Jarvis is
+// reachable, every panel is driven by real telemetry and none of this is used.
+// ---------------------------------------------------------------------------
+const DEMO_DRIVES: DriveData[] = [
   {
-    id: 'drive-c',
+    id: 'demo-c',
     letter: 'C',
     label: 'SYSTEM PRIMARY',
     total: '931.5 GB',
@@ -30,7 +35,7 @@ const INITIAL_DRIVES: DriveData[] = [
     spectrum: [0.9, 0.8, 0.7, 0.6, 0.5, 0.45, 0.4, 0.35, 0.3, 0.25, 0.2, 0.15, 0.1, 0.08, 0.05],
   },
   {
-    id: 'drive-d',
+    id: 'demo-d',
     letter: 'D',
     label: 'ARCHIVE VAULT',
     total: '1.81 TB',
@@ -45,7 +50,7 @@ const INITIAL_DRIVES: DriveData[] = [
     spectrum: [0.85, 0.75, 0.7, 0.65, 0.55, 0.5, 0.42, 0.38, 0.3, 0.22, 0.18, 0.12, 0.1, 0.06, 0.04],
   },
   {
-    id: 'drive-e',
+    id: 'demo-e',
     letter: 'E',
     label: 'QUANTUM WORKSPACE',
     total: '931.5 GB',
@@ -59,103 +64,25 @@ const INITIAL_DRIVES: DriveData[] = [
     cacheWrite: '261 KB',
     spectrum: [0.95, 0.88, 0.78, 0.68, 0.6, 0.5, 0.44, 0.35, 0.28, 0.22, 0.15, 0.12, 0.09, 0.05, 0.03],
   },
-  // Right side
-  {
-    id: 'drive-f',
-    letter: 'F',
-    label: 'SECONDARY BACKUP',
-    total: '1.81 TB',
-    used: '1.10 TB',
-    free: '710.0 GB',
-    usedPercent: 60.8,
-    freePercent: 39.2,
-    temp: 28,
-    cacheTotal: '210 KB',
-    cacheRead: '174 KB',
-    cacheWrite: '194 KB',
-    spectrum: [0.88, 0.82, 0.72, 0.64, 0.58, 0.48, 0.4, 0.32, 0.26, 0.2, 0.14, 0.1, 0.08, 0.05, 0.03],
-  },
-  {
-    id: 'drive-g',
-    letter: 'G',
-    label: 'RENDER CACHE',
-    total: '931.5 GB',
-    used: '512.1 GB',
-    free: '419.4 GB',
-    usedPercent: 55.0,
-    freePercent: 45.0,
-    temp: 29,
-    cacheTotal: '107 KB',
-    cacheRead: '185 KB',
-    cacheWrite: '353 KB',
-    spectrum: [0.92, 0.84, 0.76, 0.66, 0.54, 0.46, 0.38, 0.3, 0.24, 0.18, 0.14, 0.09, 0.06, 0.04, 0.02],
-  },
-  {
-    id: 'drive-h',
-    letter: 'H',
-    label: 'MEDIA STORAGE',
-    total: '2.72 TB',
-    used: '1.38 TB',
-    free: '1.40 TB',
-    usedPercent: 51.0,
-    freePercent: 49.0,
-    temp: 30,
-    cacheTotal: '511 KB',
-    cacheRead: '211 KB',
-    cacheWrite: '251 KB',
-    spectrum: [0.9, 0.85, 0.75, 0.68, 0.6, 0.52, 0.45, 0.38, 0.3, 0.25, 0.18, 0.12, 0.08, 0.05, 0.02],
-  },
 ];
 
-const INITIAL_TASKS: TaskItem[] = [
-  { id: 't1', text: 'FINISH AFTER FX PROJECTS', completed: false },
-  { id: 't2', text: 'CHECK NEW TUTORIAL', completed: false },
-  { id: 't3', text: "GO TO JUSTIN'S PRD", completed: false },
-  { id: 't4', text: 'MEET WITH FRIENDS', completed: false },
-  { id: 't5', text: 'CALL MOM', completed: false },
+const DEMO_PROCESSES: ProcessItem[] = [
+  { id: 'demo-p1', name: 'AWAITING UPLINK', status: 'IDLE', cpu: 0, memory: '—' },
 ];
 
-const INITIAL_PROCESSES: ProcessItem[] = [
-  { id: 'p1', name: 'MEDIA ENCODER', status: 'ACTIVE', cpu: 18, memory: '1.2 GB' },
-  { id: 'p2', name: 'AFTER EFFECTS', status: 'ACTIVE', cpu: 32, memory: '4.8 GB' },
-  { id: 'p3', name: 'PREMIERE PRO', status: 'ACTIVE', cpu: 24, memory: '3.1 GB' },
-  { id: 'p4', name: 'CHARACTER ANIMATION', status: 'IDLE', cpu: 4, memory: '850 MB' },
-  { id: 'p5', name: 'ILLUSTRATOR', status: 'ACTIVE', cpu: 12, memory: '1.6 GB' },
-  { id: 'p6', name: 'PHOTOSHOP', status: 'ACTIVE', cpu: 15, memory: '2.4 GB' },
-  { id: 'p7', name: 'CINEMA 4D', status: 'IDLE', cpu: 6, memory: '2.9 GB' },
+const DEMO_TASKS: TaskItem[] = [
+  { id: 'demo-t1', text: 'CONNECT THE JARVIS BACKEND', completed: false },
 ];
-
-const INITIAL_WEATHER: WeatherData = {
-  location: 'OVIEDO/AVIL, UNITED STATES',
-  country: 'US',
-  updatedTime: '15:10:00 AM AT 17:00',
-  temp: 15,
-  tempUnit: 'C',
-  condition: 'CLEAR',
-  humidity: 72,
-  feelsLike: 13,
-  precipitation: 0,
-  visibility: 10,
-  windSpeed: 8,
-  windDirection: 'SSW',
-  pressure: 1017.3,
-  sunrise: '07:11',
-  sunset: '19:32',
-};
 
 export default function App() {
-  const [currentThemeKey, setCurrentThemeKey] = useState<HudTheme>('classic-cyan');
+  // Solar amber is the J.A.R.V.I.S V2 house style (black + orange).
+  const [currentThemeKey, setCurrentThemeKey] = useState<HudTheme>('solar-amber');
   const theme: ThemeConfig = HUD_THEMES[currentThemeKey];
-
-  const [drives, setDrives] = useState<DriveData[]>(INITIAL_DRIVES);
-  const [tasks, setTasks] = useState<TaskItem[]>(INITIAL_TASKS);
-  const [processes, setProcesses] = useState<ProcessItem[]>(INITIAL_PROCESSES);
-  const [weather, setWeather] = useState<WeatherData>(INITIAL_WEATHER);
 
   const [selectedDrive, setSelectedDrive] = useState<DriveData | null>(null);
   const [showScanlines, setShowScanlines] = useState(true);
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const [isRealTime, setIsRealTime] = useState(false);
+  const [isRealTime, setIsRealTime] = useState(true);
   const [isSleepMode, setIsSleepMode] = useState(false);
 
   // Modals
@@ -164,40 +91,57 @@ export default function App() {
   const [isWeatherOpen, setIsWeatherOpen] = useState(false);
   const [activeAppModal, setActiveAppModal] = useState<string | null>(null);
 
-  // Task Handlers
+  // Live backend. Sleep mode stops polling so the machine can idle.
+  const { hud, state, connected, lastError, runCommand, sending } = useJarvis({
+    paused: isSleepMode,
+  });
+
+  // Until the first successful poll we are in demo mode.
+  const demoMode = state === null;
+
+  const drives = useMemo<DriveData[]>(
+    () => (demoMode ? DEMO_DRIVES : hud?.drives ?? []),
+    [demoMode, hud]
+  );
+  const tasks = useMemo<TaskItem[]>(
+    () => (demoMode ? DEMO_TASKS : hud?.tasks ?? []),
+    [demoMode, hud]
+  );
+  const processes = useMemo<ProcessItem[]>(
+    () => (demoMode ? DEMO_PROCESSES : hud?.processes ?? []),
+    [demoMode, hud]
+  );
+  const weather: WeatherData | null = demoMode ? null : hud?.weather ?? null;
+
+  // Split across the two side columns so a machine with 1-3 drives still
+  // looks balanced instead of leaving the right column empty.
+  const leftDrives = drives.filter((_, index) => index % 2 === 0).slice(0, 3);
+  const rightDrives = drives.filter((_, index) => index % 2 === 1).slice(0, 3);
+
+  // Task mutations go through the real Jarvis pipeline, so the HUD, the desktop
+  // app and voice all see the same list.
   const handleToggleTask = (id: string) => {
-    setTasks((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t))
-    );
+    const task = tasks.find((item) => item.id === id);
+    if (!task) return;
+    sound.playClick();
+    void runCommand(task.completed ? `reopen task ${task.text}` : `complete task ${task.text}`);
   };
 
   const handleAddTask = (text: string) => {
-    const newTask: TaskItem = {
-      id: `task-${Date.now()}`,
-      text: text.toUpperCase(),
-      completed: false,
-    };
-    setTasks((prev) => [newTask, ...prev]);
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    void runCommand(`add task ${trimmed}`);
   };
 
-  // Process Handlers
-  const handleToggleProcess = (id: string) => {
-    setProcesses((prev) =>
-      prev.map((p) =>
-        p.id === id
-          ? {
-              ...p,
-              status: p.status === 'ACTIVE' ? 'IDLE' : 'ACTIVE',
-              cpu: p.status === 'ACTIVE' ? 0 : Math.floor(Math.random() * 25 + 10),
-            }
-          : p
-      )
-    );
+  // Process list is live telemetry — read-only. Killing a process by clicking a
+  // HUD row is not something Jarvis should do on a mis-click.
+  const handleToggleProcess = () => {
+    sound.playClick(900);
   };
 
   // Theme Cycler
   const handleCycleTheme = () => {
-    const themeKeys: HudTheme[] = ['classic-cyan', 'matrix-green', 'cyber-magenta', 'solar-amber'];
+    const themeKeys: HudTheme[] = ['solar-amber', 'classic-cyan', 'matrix-green', 'cyber-magenta'];
     const nextIdx = (themeKeys.indexOf(currentThemeKey) + 1) % themeKeys.length;
     setCurrentThemeKey(themeKeys[nextIdx]);
   };
@@ -210,8 +154,12 @@ export default function App() {
     }, 1200);
   };
 
-  const leftDrives = drives.slice(0, 3);
-  const rightDrives = drives.slice(3, 6);
+  const assistantName = state?.assistant_name ?? 'J.A.R.V.I.S';
+  const coreStatus = demoMode
+    ? 'CORE OFFLINE · DEMO TELEMETRY'
+    : connected
+      ? 'CORE ONLINE · LIVE TELEMETRY'
+      : 'CORE UNREACHABLE · LAST KNOWN';
 
   return (
     <div
@@ -239,6 +187,21 @@ export default function App() {
         )}
       </AnimatePresence>
 
+      {/* Backend fault banner — only once we know the core is genuinely down */}
+      <AnimatePresence>
+        {!demoMode && !connected && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed top-0 left-0 right-0 z-[60] px-4 py-1.5 text-center text-[10px] font-mono tracking-widest bg-orange-600/90 text-black font-bold"
+          >
+            BACKEND UNREACHABLE — START IT WITH `python main.py --web`
+            {lastError ? ` · ${lastError.toUpperCase()}` : ''}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Main Container Content */}
       <div className="relative z-10 flex flex-col justify-between min-h-screen w-full max-w-[1700px] mx-auto p-2 sm:p-4">
         {/* TOP HUD HEADER */}
@@ -260,7 +223,7 @@ export default function App() {
 
         {/* MIDDLE & MAIN TELEMETRY GRID */}
         <main className="flex-1 flex flex-col xl:flex-row items-center justify-between gap-4 sm:gap-6 my-2 sm:my-4 w-full">
-          {/* LEFT 3 DRIVE MODULES */}
+          {/* LEFT DRIVE MODULES */}
           <div className="w-full xl:w-[320px] 2xl:w-[360px] flex flex-col gap-2.5 sm:gap-3 z-20">
             {leftDrives.map((drive) => (
               <DriveTelemetryCard
@@ -284,6 +247,7 @@ export default function App() {
               onToggleProcess={handleToggleProcess}
               weather={weather}
               onOpenWeatherModal={() => setIsWeatherOpen(true)}
+              gauges={hud?.gauges}
               onOpenAppLauncher={(name) => {
                 setActiveAppModal(name);
                 sound.playConfirm();
@@ -291,7 +255,7 @@ export default function App() {
             />
           </div>
 
-          {/* RIGHT 3 DRIVE MODULES */}
+          {/* RIGHT DRIVE MODULES */}
           <div className="w-full xl:w-[320px] 2xl:w-[360px] flex flex-col gap-2.5 sm:gap-3 z-20">
             {rightDrives.map((drive) => (
               <DriveTelemetryCard
@@ -306,17 +270,18 @@ export default function App() {
           </div>
         </main>
 
-        {/* BOTTOM HUD DOCKS (Recycle Bin on Left, Quick Command Dock on Right) */}
-        <footer className="relative w-full z-20 flex flex-col sm:flex-row items-center justify-between gap-3 pt-1 px-2 border-t border-cyan-500/20">
+        {/* BOTTOM HUD DOCKS */}
+        <footer className="relative w-full z-20 flex flex-col lg:flex-row items-center justify-between gap-3 pt-1 px-2 border-t border-cyan-500/20">
           {/* Bottom Left: Recycle Bin */}
           <RecycleBinWidget theme={theme} />
 
-          {/* Center Subtle Status Readout */}
-          <div className="hidden md:flex items-center gap-6 text-[9px] font-mono text-cyan-500/60 tracking-widest">
-            <span>JARVIS CORE KERNEL: ONLINE</span>
-            <span className="text-orange-400 font-bold">TELEMETRY FREQ: 60 FPS</span>
-            <span>MEMORY ACCESS: DMA ENABLED</span>
-          </div>
+          {/* Center: live command console */}
+          <CommandConsole
+            theme={theme}
+            connected={connected || demoMode}
+            sending={sending}
+            onSend={runCommand}
+          />
 
           {/* Bottom Right: Quick Action Controls */}
           <QuickDockControls
@@ -338,6 +303,16 @@ export default function App() {
             onToggleSleepMode={() => setIsSleepMode(!isSleepMode)}
           />
         </footer>
+
+        {/* Status readout */}
+        <div className="flex items-center justify-center gap-6 text-[9px] font-mono text-cyan-500/60 tracking-widest pt-1.5 pb-0.5">
+          <span className={connected ? '' : 'text-orange-400 font-bold'}>{coreStatus}</span>
+          <span>MODEL: {(state?.ai.model ?? 'unknown').toUpperCase()}</span>
+          <span className="text-orange-400 font-bold">UPTIME: {state?.uptime ?? '--:--:--'}</span>
+          <span>
+            {assistantName.toUpperCase()} · {state?.ai.groq_ready ? 'AI READY' : 'AI KEY MISSING'}
+          </span>
+        </div>
       </div>
 
       {/* Interactive Modals & Overlays */}

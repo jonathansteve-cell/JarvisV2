@@ -5,6 +5,14 @@ import { ThemeConfig } from '../utils/theme';
 import { sound } from '../utils/audio';
 import { Activity, Zap, Play, Terminal, CloudSun, Wind, Droplets, Compass } from 'lucide-react';
 
+/** Live core-gauge readings. `null` means "backend has no reading for this". */
+export interface CoreGauges {
+  cpu: number | null;
+  ram: number | null;
+  gpu: number | null;
+  net: number | null;
+}
+
 interface CenterCoreHUDProps {
   theme: ThemeConfig;
   drives: DriveData[];
@@ -12,9 +20,12 @@ interface CenterCoreHUDProps {
   onSelectDrive: (drive: DriveData) => void;
   processes: ProcessItem[];
   onToggleProcess: (id: string) => void;
-  weather: WeatherData;
+  /** `null` until the backend resolves a location — the panel shows NO SIGNAL. */
+  weather: WeatherData | null;
   onOpenWeatherModal: () => void;
   onOpenAppLauncher: (appName: string) => void;
+  /** Live readings; omitted = pure demo mode with simulated oscillation. */
+  gauges?: CoreGauges;
 }
 
 export const CenterCoreHUD: React.FC<CenterCoreHUDProps> = ({
@@ -27,6 +38,7 @@ export const CenterCoreHUD: React.FC<CenterCoreHUDProps> = ({
   weather,
   onOpenWeatherModal,
   onOpenAppLauncher,
+  gauges,
 }) => {
   const [coreRotation, setCoreRotation] = useState(0);
   const [hazardRotation, setHazardRotation] = useState(0);
@@ -34,18 +46,19 @@ export const CenterCoreHUD: React.FC<CenterCoreHUDProps> = ({
   const [isExtremeMode, setIsExtremeMode] = useState(false);
   const [is200kMode, setIs200kMode] = useState(false);
 
-  // Core metrics animation
-  const [cpuUsage, setCpuUsage] = useState(12);
-  const [ramUsage, setRamUsage] = useState(48);
-  const [gpuUsage, setGpuUsage] = useState(72);
-  const [netUsage, setNetUsage] = useState(28);
+  // Simulated readings. Used ONLY for gauges the backend cannot report
+  // (notably GPU, which psutil does not expose) so the rings never sit dead.
+  const [cpuSim, setCpuSim] = useState(12);
+  const [ramSim, setRamSim] = useState(48);
+  const [gpuSim, setGpuSim] = useState(72);
+  const [netSim, setNetSim] = useState(28);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      const speedMult迷 = isExtremeMode ? 2.5 : 1;
-      setCoreRotation((prev) => (prev + 0.5 * speedMult迷) % 360);
-      setHazardRotation((prev) => (prev - 0.7 * speedMult迷) % 360);
-      setOuterRingRotation((prev) => (prev + 0.2 * speedMult迷) % 360);
+      const speedMult = isExtremeMode ? 2.5 : 1;
+      setCoreRotation((prev) => (prev + 0.5 * speedMult) % 360);
+      setHazardRotation((prev) => (prev - 0.7 * speedMult) % 360);
+      setOuterRingRotation((prev) => (prev + 0.2 * speedMult) % 360);
 
       // Organic telemetry oscillation
       if (Math.random() > 0.4) {
@@ -54,15 +67,25 @@ export const CenterCoreHUD: React.FC<CenterCoreHUDProps> = ({
         const baseGpu = isExtremeMode ? 96 : 72;
         const baseNet = isExtremeMode ? 75 : 28;
 
-        setCpuUsage(Math.min(99, Math.max(5, baseCpu + Math.floor(Math.random() * 8 - 4))));
-        setRamUsage(Math.min(99, Math.max(10, baseRam + Math.floor(Math.random() * 6 - 3))));
-        setGpuUsage(Math.min(99, Math.max(10, baseGpu + Math.floor(Math.random() * 6 - 3))));
-        setNetUsage(Math.min(99, Math.max(5, baseNet + Math.floor(Math.random() * 10 - 5))));
+        setCpuSim(Math.min(99, Math.max(5, baseCpu + Math.floor(Math.random() * 8 - 4))));
+        setRamSim(Math.min(99, Math.max(10, baseRam + Math.floor(Math.random() * 6 - 3))));
+        setGpuSim(Math.min(99, Math.max(10, baseGpu + Math.floor(Math.random() * 6 - 3))));
+        setNetSim(Math.min(99, Math.max(5, baseNet + Math.floor(Math.random() * 10 - 5))));
       }
     }, 100);
 
     return () => clearInterval(interval);
   }, [isExtremeMode]);
+
+  // Live telemetry always wins over the simulation.
+  const cpuUsage = gauges?.cpu ?? cpuSim;
+  const ramUsage = gauges?.ram ?? ramSim;
+  const gpuUsage = gauges?.gpu ?? gpuSim;
+  const netUsage = gauges?.net ?? netSim;
+
+  /** A gauge the backend cannot report renders "--", never a made-up number. */
+  const gaugeLabel = (live: number | null | undefined, value: number) =>
+    live === null || live === undefined ? '--' : `${Math.round(value)}%`;
 
   // Sector buttons around the inner circle
   const sectorButtons = [
@@ -78,15 +101,14 @@ export const CenterCoreHUD: React.FC<CenterCoreHUDProps> = ({
     { label: 'FFOX', name: 'Quantum Engine', angle: 300 },
   ];
 
-  // Drive orbital badge coordinates mapped around the central ring
-  const driveNodes = [
-    { drive: drives[0], angle: 90, distance: 220, labelVal: '811.5 GB' }, // C (Top)
-    { drive: drives[1], angle: 330, distance: 220, labelVal: '538.1 GB' }, // D
-    { drive: drives[2], angle: 300, distance: 220, labelVal: '50.6 GB' }, // E
-    { drive: drives[3], angle: 270, distance: 220, labelVal: '1.1 TB' }, // F (Bottom)
-    { drive: drives[4], angle: 240, distance: 220, labelVal: '405.8 GB' }, // G
-    { drive: drives[5], angle: 180, distance: 220, labelVal: '1.4 TB' }, // H (Left)
-  ];
+  // Drive orbital badge coordinates mapped around the central ring.
+  // Angles are fixed positions; the badge value is the drive's real free space.
+  const driveNodes = drives.slice(0, 6).map((drive, index) => ({
+    drive,
+    angle: [90, 330, 300, 270, 240, 180][index],
+    distance: 220,
+    labelVal: drive.free,
+  }));
 
   return (
     <div className="relative flex items-center justify-center w-full max-w-[620px] lg:max-w-[700px] h-[520px] lg:h-[580px] select-none">
@@ -165,6 +187,8 @@ export const CenterCoreHUD: React.FC<CenterCoreHUDProps> = ({
         }}
         className="absolute right-0 lg:-right-6 top-1/2 -translate-y-1/2 z-30 flex flex-col items-start p-2 rounded border border-cyan-500/40 bg-[#040e1a]/85 backdrop-blur-sm cursor-pointer hover:border-cyan-300 transition-all font-mono text-[8px] sm:text-[9px] max-w-[145px] sm:max-w-[165px] shadow-[0_0_15px_rgba(0,229,255,0.15)]"
       >
+        {weather ? (
+          <>
         <div className="text-[8px] text-cyan-400/70 font-semibold tracking-wider truncate w-full border-b border-cyan-500/30 pb-0.5 mb-1">
           {weather.location}
         </div>
@@ -222,6 +246,17 @@ export const CenterCoreHUD: React.FC<CenterCoreHUDProps> = ({
             <span>SET: {weather.sunset}</span>
           </div>
         </div>
+          </>
+        ) : (
+          <div className="flex flex-col items-center justify-center gap-1.5 py-5 w-full text-center">
+            <span className="text-[10px] font-bold tracking-[0.2em] text-cyan-400/70">NO SIGNAL</span>
+            <span className="text-[7px] text-cyan-500/50 leading-relaxed">
+              WEATHER UPLINK OFFLINE
+              <br />
+              SET weather.city IN CONFIG
+            </span>
+          </div>
+        )}
       </div>
 
       {/* SVG Central Arc Reactor and Rotating Rings */}
@@ -438,7 +473,7 @@ export const CenterCoreHUD: React.FC<CenterCoreHUDProps> = ({
             fontFamily="'Orbitron', monospace"
             letterSpacing="1"
           >
-            {ramUsage}%
+            {gaugeLabel(gauges?.ram, ramUsage)}
           </text>
           <text
             x="0"
@@ -450,7 +485,7 @@ export const CenterCoreHUD: React.FC<CenterCoreHUDProps> = ({
             fontFamily="'Orbitron', monospace"
             letterSpacing="1"
           >
-            {gpuUsage}%
+            {gaugeLabel(gauges?.gpu, gpuUsage)}
           </text>
           <text
             x="0"
@@ -462,7 +497,7 @@ export const CenterCoreHUD: React.FC<CenterCoreHUDProps> = ({
             fontFamily="'Orbitron', monospace"
             letterSpacing="1"
           >
-            {netUsage}%
+            {gaugeLabel(gauges?.net, netUsage)}
           </text>
         </g>
 
@@ -490,7 +525,7 @@ export const CenterCoreHUD: React.FC<CenterCoreHUDProps> = ({
             fontFamily="'Orbitron', monospace"
             letterSpacing="1"
           >
-            {cpuUsage}%
+            {gaugeLabel(gauges?.cpu, cpuUsage)}
           </text>
         </g>
       </svg>

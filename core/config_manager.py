@@ -62,6 +62,11 @@ DEFAULT_CONFIG: dict[str, Any] = {
         "allow_web_open": True,
         "default_session_minutes": 30,
     },
+    "weather": {
+        # Empty = geolocate by public IP. Set a city name (e.g. "Coimbatore")
+        # to pin the CyberHUD weather panel to a fixed location.
+        "city": os.getenv("JARVIS_WEATHER_CITY", ""),
+    },
     "applications": {
         "paths": {},
     },

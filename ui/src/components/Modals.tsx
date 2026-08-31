@@ -13,7 +13,7 @@ interface ModalsProps {
   onCloseDiagnostic: () => void;
   isWeatherOpen: boolean;
   onCloseWeather: () => void;
-  weather: WeatherData;
+  weather: WeatherData | null;
   activeAppModal: string | null;
   onCloseAppModal: () => void;
 }
@@ -189,6 +189,7 @@ export const Modals: React.FC<ModalsProps> = ({
               </button>
             </div>
 
+            {weather ? (
             <div className="space-y-3 text-xs">
               <div className="flex items-center justify-between p-3 rounded bg-black/50 border border-cyan-500/30">
                 <div>
@@ -219,6 +220,18 @@ export const Modals: React.FC<ModalsProps> = ({
                 </div>
               </div>
             </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center gap-2 py-8 text-center">
+                <span className="text-sm font-bold tracking-[0.25em] text-cyan-400/70">NO SIGNAL</span>
+                <span className="text-[10px] text-cyan-500/50 leading-relaxed">
+                  WEATHER UPLINK UNAVAILABLE.
+                  <br />
+                  SET weather.city IN config/config.json, OR CHECK NETWORK ACCESS
+                  <br />
+                  TO api.open-meteo.com.
+                </span>
+              </div>
+            )}
           </div>
         </motion.div>
       )}

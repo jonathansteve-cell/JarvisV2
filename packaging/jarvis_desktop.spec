@@ -36,6 +36,12 @@ datas = [
     (str(PROJECT / "LICENSE"), "."),
 ]
 
+# The CyberHUD React bundle is a build artifact (gitignored), so ship it only
+# when it has actually been built: cd ui && npm install && npm run build
+_ui_dist = PROJECT / "ui" / "dist"
+if _ui_dist.exists():
+    datas.append((str(_ui_dist), "ui/dist"))
+
 # Hidden imports that PyInstaller might miss
 hiddenimports = [
     # Voice and audio

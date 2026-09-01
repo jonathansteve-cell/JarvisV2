@@ -1,34 +1,85 @@
-# UI Guide — Solar Core HUD + Web Dashboard
+# UI Guide — CyberHUD + Desktop HUD
 
 Jarvis V2 ships **two interfaces**, both in the same black-and-orange Hero style:
 
-1. **Hero Core HUD** (`gui/main_window.py`) — native Tkinter desktop app (default)
-2. **Solar Web Dashboard** (`dashboard/`) — Spark-style browser dashboard via
-   `python main.py --web` → `http://localhost:8765`
+1. **CyberHUD** (`ui/` + `dashboard/server.py`) — React browser dashboard, the
+   default. `python main.py` → `http://localhost:8765`
+2. **Hero Core HUD** (`gui/main_window.py`) — native Tkinter desktop app via
+   `python main.py --gui`
 
 ![UI mockup](images/jarvis_v2_hero_ui_mockup.png)
 
-## Solar Web Dashboard (Spark-style)
+## CyberHUD (browser)
 
-Run `python main.py --web` and open **http://localhost:8765** (same machine) or
-`http://<your-pc-ip>:8765` from a phone/tablet on the same network.
+A holographic telemetry dashboard: a central reactor core with live CPU / RAM /
+GPU / NET rings, per-drive storage cards, a process monitor, a weather uplink,
+a task list, and a natural-language command console.
 
-| Card | Contents |
+Build it once, then run:
+
+```bash
+cd ui && npm install && npm run build
+cd .. && python main.py --web          # http://localhost:8765
+```
+
+Open `http://localhost:8765` on the same machine, or `http://<your-pc-ip>:8765`
+from a phone or tablet on the same network.
+
+For live-reload development, run the API and the UI separately:
+
+```bash
+python main.py --web                   # terminal 1
+cd ui && npm run dev                   # terminal 2 → http://localhost:3000
+```
+
+| Panel | Contents |
 | --- | --- |
-| Hero | Canvas solar-core animation, assistant name, live stat tiles (memories, conversations, open tasks, grind minutes) |
-| System Telemetry | Circular CPU / MEMORY / DISK gauges with color thresholds + power line |
-| AI Console | Full chat with Jarvis; browser speaks replies (Web Speech API, deep-synthetic profile) with a TTS toggle |
-| Tasks / Notes | Live from the productivity store |
-| Memory Core | Facts Jarvis remembers (SQLite) |
-| Roblox · Safe Mode | Session countdown, goals checklist, lifetime grind stats, quick buttons |
-| Quick Actions | One-click commands (status, time, joke, screenshot, music…) |
-| Bottom console | Fixed command bar with SEND / SPEAK / ROBLOX / GRIND |
+| Center core | Rotating reactor with live CPU / RAM / GPU / NET gauges; pulses while Jarvis speaks |
+| Drive array | One card per mounted partition: fill, free space, disk I/O |
+| Active modules | Top processes by memory, with per-process CPU |
+| Weather uplink | Open-Meteo current conditions, cached 15 minutes |
+| Header | Clock plus the live task list — add and tick tasks here |
+| Command console | Bottom dock: **microphone** or keyboard; anything Jarvis understands works |
+| Quick dock | Theme cycle (4 themes), scanlines, diagnostics, sleep mode |
+
+### Voice
+
+The console has an always-on microphone (Web Speech API). Say a command, and it
+is transcribed, debounced into a single utterance, and sent through the same
+`/api/command` pipeline as typed text. Replies are spoken back at rate 0.92 /
+pitch 0.55 with an `en-GB` male voice, matching the `dark_synthetic` Python
+persona. The mic mutes itself while Jarvis talks so he never hears his own reply.
+
+Wake words come from `voice.wake_words` in `config/config.json`, so ambient
+speech is ignored and you can say `hey jarvis, system status`.
+
+Dictation needs Chrome, Edge or Safari, and needs HTTPS or `localhost` — over
+plain `http://<lan-ip>` the browser blocks the microphone. The speaker icon mutes
+replies; the mic icon toggles dictation. Details in [`ui/README.md`](../ui/README.md).
 
 **Under the hood:** `dashboard/server.py` uses only the Python standard library
-(`http.server`) — `GET /api/state` returns the full snapshot (polled every 2 s) and
-`POST /api/command` runs any command through the same Jarvis pipeline. Server-side
-TTS is off by design: the browser speaks, so audio lands on the machine running
-the browser.
+(`http.server`). `GET /api/state` returns the full snapshot (polled every 2 s),
+`POST /api/command` runs any command through the same Jarvis pipeline, and
+`ui/dist/` is served as static files. Server-side TTS is off by design: the
+browser speaks, so audio lands on the machine running the browser.
+
+Full details in [`ui/README.md`](../ui/README.md).
+
+### Nothing on screen is invented
+
+A probe that cannot report a value returns `null` and its panel reads `NO SIGNAL`
+or `--` rather than showing a made-up number. That currently applies to:
+
+- **Drive temperature** — needs S.M.A.R.T. (`smartctl`/WMI); `psutil` cannot read it.
+- **GPU** — needs `pynvml` (`pip install nvidia-ml-py`); `psutil` has no GPU support.
+- **Weather** — until the first Open-Meteo lookup resolves, or with no network.
+
+Pin the weather location with `weather.city` in `config/config.json` (or
+`JARVIS_WEATHER_CITY` in `.env`); leave it empty to geolocate by public IP.
+
+Until the backend answers its first poll the HUD shows three placeholder drives
+so it is never blank. Once Jarvis responds, every panel is live.
+
 
 ## Desktop HUD: Solar Core
 
